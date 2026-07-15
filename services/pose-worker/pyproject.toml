@@ -1,0 +1,9 @@
+[project]
+name = "shot-ai-pose-worker"
+version = "0.1.0"
+requires-python = ">=3.11,<3.12"
+
+[tool.pytest.ini_options]
+addopts = "-q"
+pythonpath = ["."]
+testpaths = ["tests"]

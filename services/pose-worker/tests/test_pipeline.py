@@ -1,0 +1,43 @@
+import gzip
+import json
+from pathlib import Path
+
+from app.models import AnalyzeMotionRequest
+from app.pipeline import analyze_motion
+from tests.fixtures import create_video, make_shot_frames
+
+
+class FakePoseBackend:
+    model_name = "Fake deterministic pose"
+    model_version = "test-1"
+    model_sha256 = "f" * 64
+
+    def analyze_video(self, _file_path, metadata):
+        assert metadata.frame_count == 90
+        return make_shot_frames(count=90)
+
+
+def test_pipeline_writes_an_accepted_traceable_artifact(tmp_path: Path):
+    video = create_video(tmp_path / "data" / "uploads" / "valid.mp4", frames=90, size="720x720")
+    output = tmp_path / "data" / "artifacts" / "motion.json.gz"
+    response = analyze_motion(
+        AnalyzeMotionRequest(
+            request_id="job_test",
+            source_type="user",
+            file_path=str(video),
+            source_file_id="file_test",
+            source_sha256="a" * 64,
+            shooting_hand="right",
+            normal_speed_confirmed=True,
+            output_path=str(output),
+        ),
+        FakePoseBackend(),
+    )
+
+    assert response.status == "accepted", response.model_dump()
+    assert output.is_file()
+    with gzip.open(output, "rt", encoding="utf8") as handle:
+        artifact = json.load(handle)
+    assert artifact["events"]["release_pose_proxy"]["isProxy"] is True
+    assert len(artifact["frames"]) == 90
+    assert artifact["provenance"]["modelSha256"] == "f" * 64

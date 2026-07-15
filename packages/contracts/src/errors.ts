@@ -9,6 +9,9 @@ export const ErrorCodes = [
   'LOW_POSE_CONFIDENCE',
   'INCOMPLETE_ACTION',
   'ABNORMAL_VIDEO_TIMING',
+  'UNSTABLE_CAMERA',
+  'VIDEO_NOT_DECODABLE',
+  'FILE_TOO_LARGE',
   'MULTIPLE_ACTIONS_DETECTED',
   'AMBIGUOUS_PERSON_TRACK',
   'INSUFFICIENT_COMPARABLE_REGIONS',
@@ -41,4 +44,3 @@ export const ApiErrorSchema = Type.Object(
 
 export type ErrorCode = (typeof ErrorCodes)[number];
 export type ApiError = Static<typeof ApiErrorSchema>;
-
