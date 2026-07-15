@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
 from threading import Lock
 
 from fastapi import FastAPI, HTTPException
@@ -8,16 +9,56 @@ from fastapi import FastAPI, HTTPException
 from app.api.security import require_data_path
 from app.config import Settings
 from app.models import (
+    BODY_REGIONS,
+    AnalyzeMotionRejected,
     AnalyzeMotionRequest,
     AnalyzeMotionResponse,
     HealthResponse,
     PreviewResult,
+    QualityCheck,
+    QualityReport,
     RenderAlignedPreviewsRequest,
 )
 from app.pipeline import analyze_motion
 from app.pose.backend import PoseBackend
 from app.pose.mediapipe_backend import MediaPipePoseBackend
 from app.previews.render import render_aligned_previews
+
+
+INPUT_REJECTION_CODES = {
+    "VIDEO_NOT_DECODABLE",
+    "AMBIGUOUS_PERSON_TRACK",
+    "LOW_POSE_CONFIDENCE",
+    "INCOMPLETE_ACTION",
+    "MULTIPLE_ACTIONS_DETECTED",
+}
+
+
+def _input_rejection(request: AnalyzeMotionRequest, error: ValueError):
+    code = str(error).split(":", 1)[0]
+    if code not in INPUT_REJECTION_CODES:
+        return None
+    report = QualityReport(
+        source_file_id=request.source_file_id,
+        source_type=request.source_type,
+        status="rejected",
+        checks=[
+            QualityCheck(
+                code=code,
+                status="fail",
+                message=str(error),
+            )
+        ],
+        overall_pose_confidence=None,
+        comparable_regions=[],
+        rejected_regions={region: code for region in BODY_REGIONS},
+        rejection_codes=[code],
+        created_at=datetime.now(UTC).isoformat(),
+    )
+    return AnalyzeMotionRejected(
+        quality_report=report,
+        rejection_codes=[code],
+    )
 
 
 def create_app(
@@ -72,6 +113,9 @@ def create_app(
                     app.state.backend,
                 )
             except ValueError as error:
+                rejection = _input_rejection(request, error)
+                if rejection is not None:
+                    return rejection
                 raise HTTPException(status_code=400, detail=str(error)) from error
             finally:
                 app.state.busy = False

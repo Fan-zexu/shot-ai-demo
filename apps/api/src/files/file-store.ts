@@ -106,6 +106,10 @@ export class FileStore {
     return readFile(this.resolvePath(relativePath));
   }
 
+  async remove(relativePath: string): Promise<void> {
+    await rm(this.resolvePath(relativePath), { force: true });
+  }
+
   private pathError(relativePath: string): AppError {
     return new AppError({
       code: 'PATH_OUTSIDE_DATA_ROOT',
@@ -115,4 +119,3 @@ export class FileStore {
     });
   }
 }
-

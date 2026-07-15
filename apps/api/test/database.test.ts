@@ -23,9 +23,9 @@ test('database enables foreign keys, WAL, and the complete initial schema', (con
     'job_events',
     'jobs',
     'motion_artifacts',
+    'quality_reports',
     'templates',
   ]) {
     assert.equal(tables.includes(table), true, `${table} should exist`);
   }
 });
-

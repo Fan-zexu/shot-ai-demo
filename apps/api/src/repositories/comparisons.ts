@@ -71,6 +71,70 @@ export class ComparisonRepository {
       | undefined;
     return row ? mapComparison(row) : null;
   }
+
+  getActive(id: string): ComparisonRecord | null {
+    const comparison = this.get(id);
+    return comparison?.deletedAt === null ? comparison : null;
+  }
+
+  markRunning(id: string): ComparisonRecord {
+    return this.updateStatus(id, { status: 'running' });
+  }
+
+  attachUserArtifact(id: string, artifactId: string): ComparisonRecord {
+    return this.updateStatus(id, { status: 'running', userArtifactId: artifactId });
+  }
+
+  markReady(id: string, resultId: string): ComparisonRecord {
+    return this.updateStatus(id, { status: 'ready', resultId });
+  }
+
+  markRejected(id: string, code: string, error: Record<string, unknown>): ComparisonRecord {
+    return this.updateStatus(id, { status: 'rejected', rejectionCode: code, error });
+  }
+
+  markFailed(id: string, error: Record<string, unknown>): ComparisonRecord {
+    return this.updateStatus(id, { status: 'failed', error });
+  }
+
+  remove(id: string): void {
+    const now = new Date().toISOString();
+    const result = this.database
+      .prepare('UPDATE comparisons SET deleted_at = ?, updated_at = ? WHERE id = ?')
+      .run(now, now, id);
+    if (result.changes !== 1) throw new Error(`COMPARISON_NOT_FOUND: ${id}`);
+  }
+
+  private updateStatus(
+    id: string,
+    input: {
+      status: JobStatus;
+      userArtifactId?: string;
+      resultId?: string;
+      rejectionCode?: string;
+      error?: Record<string, unknown>;
+    },
+  ): ComparisonRecord {
+    const updatedAt = new Date().toISOString();
+    const result = this.database
+      .prepare(
+        `UPDATE comparisons
+         SET status = ?, user_artifact_id = COALESCE(?, user_artifact_id),
+             result_id = COALESCE(?, result_id), rejection_code = ?, error_json = ?, updated_at = ?
+         WHERE id = ?`,
+      )
+      .run(
+        input.status,
+        input.userArtifactId ?? null,
+        input.resultId ?? null,
+        input.rejectionCode ?? null,
+        input.error ? JSON.stringify(input.error) : null,
+        updatedAt,
+        id,
+      );
+    if (result.changes !== 1) throw new Error(`COMPARISON_NOT_FOUND: ${id}`);
+    return this.get(id)!;
+  }
 }
 
 function mapComparison(row: ComparisonRow): ComparisonRecord {
@@ -90,4 +154,3 @@ function mapComparison(row: ComparisonRow): ComparisonRecord {
     deletedAt: row.deleted_at,
   };
 }
-

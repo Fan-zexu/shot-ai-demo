@@ -87,10 +87,25 @@ export class JobRepository {
     ).map(mapJob);
   }
 
+  findLatestForEntity(type: JobType, entityId: string): JobRecord | null {
+    const row = this.database
+      .prepare(
+        `SELECT * FROM jobs
+         WHERE type = ? AND entity_id = ?
+         ORDER BY created_at DESC LIMIT 1`,
+      )
+      .get(type, entityId) as JobRow | undefined;
+    return row ? mapJob(row) : null;
+  }
+
   events(id: string): JobEventRecord[] {
     return (
       this.database.prepare('SELECT * FROM job_events WHERE job_id = ? ORDER BY id').all(id) as JobEventRow[]
     ).map(mapEvent);
+  }
+
+  removeForEntity(type: JobType, entityId: string): void {
+    this.database.prepare('DELETE FROM jobs WHERE type = ? AND entity_id = ?').run(type, entityId);
   }
 
   transition(
@@ -236,4 +251,3 @@ function mapEvent(row: JobEventRow): JobEventRecord {
     createdAt: row.created_at,
   };
 }
-

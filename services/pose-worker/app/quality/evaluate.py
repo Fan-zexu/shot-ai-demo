@@ -10,6 +10,7 @@ from app.models import (
     PoseFrame,
     QualityCheck,
     QualityReport,
+    ShootingHand,
     SourceType,
     VideoMetadata,
     landmark_map,
@@ -37,24 +38,35 @@ REQUIRED_NAMES = {
     "right_foot_index",
 }
 
-REGION_NAMES: dict[BodyRegion, set[str]] = {
-    "lower_body": {
-        "left_hip",
-        "right_hip",
-        "left_knee",
-        "right_knee",
-        "left_ankle",
-        "right_ankle",
-        "left_heel",
-        "right_heel",
-        "left_foot_index",
-        "right_foot_index",
-    },
-    "torso": {"left_shoulder", "right_shoulder", "left_hip", "right_hip"},
-    "shooting_arm": {"right_shoulder", "right_elbow", "right_wrist"},
-    "guide_arm": {"left_shoulder", "left_elbow", "left_wrist"},
-    "whole_body_timing": REQUIRED_NAMES,
-}
+
+def region_names(shooting_hand: ShootingHand) -> dict[BodyRegion, set[str]]:
+    guide_hand = "left" if shooting_hand == "right" else "right"
+    return {
+        "lower_body": {
+            "left_hip",
+            "right_hip",
+            "left_knee",
+            "right_knee",
+            "left_ankle",
+            "right_ankle",
+            "left_heel",
+            "right_heel",
+            "left_foot_index",
+            "right_foot_index",
+        },
+        "torso": {"left_shoulder", "right_shoulder", "left_hip", "right_hip"},
+        "shooting_arm": {
+            f"{shooting_hand}_shoulder",
+            f"{shooting_hand}_elbow",
+            f"{shooting_hand}_wrist",
+        },
+        "guide_arm": {
+            f"{guide_hand}_shoulder",
+            f"{guide_hand}_elbow",
+            f"{guide_hand}_wrist",
+        },
+        "whole_body_timing": REQUIRED_NAMES,
+    }
 
 
 def _point_available(point) -> bool:
@@ -94,6 +106,7 @@ def evaluate_quality(
     metadata: VideoMetadata,
     frames: list[PoseFrame],
     source_type: SourceType,
+    shooting_hand: ShootingHand,
     normal_speed_confirmed: bool,
     timing_rejection_codes: Iterable[str],
     thresholds: QualityThresholds,
@@ -198,8 +211,9 @@ def evaluate_quality(
 
     comparable_regions: list[BodyRegion] = []
     rejected_regions: dict[BodyRegion, str] = {}
+    names_by_region = region_names(shooting_hand)
     for region in BODY_REGIONS:
-        coverage, _ = _coverage(frames, REGION_NAMES[region])
+        coverage, _ = _coverage(frames, names_by_region[region])
         if coverage >= thresholds.required_landmark_coverage:
             comparable_regions.append(region)
         else:

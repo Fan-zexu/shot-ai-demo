@@ -16,6 +16,7 @@
     "test:node": "pnpm -r --if-present test",
     "test:python": "cd services/pose-worker && ../../.venv/bin/python -m pytest -q",
     "typecheck": "pnpm -r --if-present typecheck",
+    "api:dev": "pnpm --filter @shot-ai/api dev",
     "worker:dev": "cd services/pose-worker && ../../.venv/bin/uvicorn app.api.main:create_app --factory --host 127.0.0.1 --port 8001"
   },
   "devDependencies": {

@@ -66,12 +66,63 @@ export class FileRepository {
     return row ? mapFile(row) : null;
   }
 
+  getActive(id: string): FileRecord | null {
+    const file = this.get(id);
+    return file?.deletedAt === null ? file : null;
+  }
+
   findActiveBySha256(sha256: string): FileRecord[] {
     return (
       this.database
         .prepare('SELECT * FROM files WHERE sha256 = ? AND deleted_at IS NULL ORDER BY created_at')
         .all(sha256) as FileRow[]
     ).map(mapFile);
+  }
+
+  isReferencedVideo(id: string): boolean {
+    const row = this.database
+      .prepare(
+        `SELECT (
+          EXISTS(SELECT 1 FROM templates WHERE source_file_id = ? AND deleted_at IS NULL)
+          OR EXISTS(
+            SELECT 1 FROM comparisons
+            WHERE user_source_file_id = ? AND deleted_at IS NULL
+          )
+          OR EXISTS(
+            SELECT 1 FROM comparison_results AS result
+            JOIN comparisons AS comparison ON comparison.id = result.comparison_id
+            WHERE comparison.deleted_at IS NULL
+              AND (result.template_preview_file_id = ? OR result.user_preview_file_id = ?)
+          )
+        ) AS referenced`,
+      )
+      .get(id, id, id, id) as { referenced: number };
+    return row.referenced === 1;
+  }
+
+  removeIfUnreferenced(id: string): FileRecord | null {
+    const file = this.get(id);
+    if (!file) return null;
+    const row = this.database
+      .prepare(
+        `SELECT (
+          EXISTS(SELECT 1 FROM templates WHERE source_file_id = ?)
+          OR EXISTS(SELECT 1 FROM comparisons WHERE user_source_file_id = ?)
+          OR EXISTS(
+            SELECT 1 FROM motion_artifacts
+            WHERE source_file_id = ? OR artifact_file_id = ?
+          )
+          OR EXISTS(
+            SELECT 1 FROM comparison_results
+            WHERE result_file_id = ? OR template_preview_file_id = ? OR user_preview_file_id = ?
+          )
+          OR EXISTS(SELECT 1 FROM quality_reports WHERE source_file_id = ?)
+        ) AS referenced`,
+      )
+      .get(id, id, id, id, id, id, id, id) as { referenced: number };
+    if (row.referenced === 1) return null;
+    this.database.prepare('DELETE FROM files WHERE id = ?').run(id);
+    return file;
   }
 }
 
@@ -88,4 +139,3 @@ function mapFile(row: FileRow): FileRecord {
     deletedAt: row.deleted_at,
   };
 }
-

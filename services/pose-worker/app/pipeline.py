@@ -77,6 +77,7 @@ def analyze_motion(
         metadata=metadata,
         frames=frames,
         source_type=request.source_type,
+        shooting_hand=request.shooting_hand,
         normal_speed_confirmed=request.normal_speed_confirmed,
         timing_rejection_codes=timing_codes,
         thresholds=thresholds,

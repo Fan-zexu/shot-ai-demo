@@ -99,3 +99,9 @@ CREATE TABLE IF NOT EXISTS job_events (
 
 CREATE INDEX IF NOT EXISTS idx_job_events_job_id ON job_events(job_id, id);
 
+CREATE TABLE IF NOT EXISTS quality_reports (
+  job_id TEXT PRIMARY KEY REFERENCES jobs(id) ON DELETE CASCADE,
+  source_file_id TEXT NOT NULL REFERENCES files(id),
+  report_json TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);

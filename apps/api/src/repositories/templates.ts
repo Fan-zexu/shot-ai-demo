@@ -61,12 +61,44 @@ export class TemplateRepository {
     return row ? mapTemplate(row) : null;
   }
 
+  getActive(id: string): TemplateRecord | null {
+    const template = this.get(id);
+    return template?.deletedAt === null ? template : null;
+  }
+
+  listActive(): TemplateRecord[] {
+    return (
+      this.database
+        .prepare('SELECT * FROM templates WHERE deleted_at IS NULL ORDER BY created_at DESC')
+        .all() as TemplateRow[]
+    ).map(mapTemplate);
+  }
+
   listSelectable(): TemplateRecord[] {
     return (
       this.database
         .prepare("SELECT * FROM templates WHERE status = 'ready' AND deleted_at IS NULL ORDER BY created_at DESC")
         .all() as TemplateRow[]
     ).map(mapTemplate);
+  }
+
+  markRunning(id: string): TemplateRecord {
+    return this.updateStatus(id, { status: 'running' });
+  }
+
+  markReady(id: string, artifactId: string): TemplateRecord {
+    return this.updateStatus(id, {
+      status: 'ready',
+      currentArtifactId: artifactId,
+    });
+  }
+
+  markRejected(id: string, code: string, error: Record<string, unknown>): TemplateRecord {
+    return this.updateStatus(id, { status: 'rejected', rejectionCode: code, error });
+  }
+
+  markFailed(id: string, error: Record<string, unknown>): TemplateRecord {
+    return this.updateStatus(id, { status: 'failed', error });
   }
 
   remove(id: string): { mode: 'physical' | 'soft' } {
@@ -81,6 +113,35 @@ export class TemplateRepository {
     }
     this.database.prepare('DELETE FROM templates WHERE id = ?').run(id);
     return { mode: 'physical' };
+  }
+
+  private updateStatus(
+    id: string,
+    input: {
+      status: JobStatus;
+      currentArtifactId?: string;
+      rejectionCode?: string;
+      error?: Record<string, unknown>;
+    },
+  ): TemplateRecord {
+    const updatedAt = new Date().toISOString();
+    const result = this.database
+      .prepare(
+        `UPDATE templates
+         SET status = ?, current_artifact_id = COALESCE(?, current_artifact_id),
+             rejection_code = ?, error_json = ?, updated_at = ?
+         WHERE id = ?`,
+      )
+      .run(
+        input.status,
+        input.currentArtifactId ?? null,
+        input.rejectionCode ?? null,
+        input.error ? JSON.stringify(input.error) : null,
+        updatedAt,
+        id,
+      );
+    if (result.changes !== 1) throw new Error(`TEMPLATE_NOT_FOUND: ${id}`);
+    return this.get(id)!;
   }
 }
 
@@ -100,4 +161,3 @@ function mapTemplate(row: TemplateRow): TemplateRecord {
     deletedAt: row.deleted_at,
   };
 }
-

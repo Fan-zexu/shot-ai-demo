@@ -23,6 +23,7 @@ def test_user_quality_rejects_sustained_body_crop():
         metadata=user_metadata(),
         frames=frames,
         source_type="user",
+        shooting_hand="right",
         normal_speed_confirmed=True,
         timing_rejection_codes=[],
         thresholds=USER_THRESHOLDS,
@@ -38,6 +39,7 @@ def test_user_quality_rejects_unconfirmed_normal_speed():
         metadata=user_metadata(),
         frames=make_frames(),
         source_type="user",
+        shooting_hand="right",
         normal_speed_confirmed=False,
         timing_rejection_codes=[],
         thresholds=USER_THRESHOLDS,
@@ -52,6 +54,7 @@ def test_user_quality_rejects_an_eleven_frame_landmark_gap_even_when_total_cover
         metadata=user_metadata(),
         frames=make_frames(count=150, missing_feet_from=139),
         source_type="user",
+        shooting_hand="right",
         normal_speed_confirmed=True,
         timing_rejection_codes=[],
         thresholds=USER_THRESHOLDS,
@@ -70,3 +73,12 @@ def test_quality_threshold_overrides_are_validated_and_versionable():
 
     assert updated.min_pose_confidence == 0.72
     assert updated.max_consecutive_missing_frames == 8
+
+
+def test_left_hand_region_mapping_does_not_relabel_the_right_arm_as_shooting_arm():
+    from app.quality.evaluate import region_names
+
+    names = region_names("left")
+
+    assert names["shooting_arm"] == {"left_shoulder", "left_elbow", "left_wrist"}
+    assert names["guide_arm"] == {"right_shoulder", "right_elbow", "right_wrist"}
