@@ -82,7 +82,7 @@ class MediaPipePoseBackend:
             raise FileNotFoundError(f"pose model not found: {self.model_path}")
         self.model_sha256 = hashlib.sha256(self.model_path.read_bytes()).hexdigest()
         base_options = mp.tasks.BaseOptions(model_asset_path=str(self.model_path))
-        options = mp.tasks.vision.PoseLandmarkerOptions(
+        self._options = mp.tasks.vision.PoseLandmarkerOptions(
             base_options=base_options,
             running_mode=mp.tasks.vision.RunningMode.VIDEO,
             num_poses=2,
@@ -90,7 +90,20 @@ class MediaPipePoseBackend:
             min_pose_presence_confidence=0.5,
             min_tracking_confidence=0.5,
         )
-        self._landmarker = mp.tasks.vision.PoseLandmarker.create_from_options(options)
+        self._landmarker = self._create_landmarker()
+        self._has_analyzed_video = False
+
+    def _create_landmarker(self):
+        return mp.tasks.vision.PoseLandmarker.create_from_options(self._options)
+
+    def _landmarker_for_next_video(self):
+        if self._has_analyzed_video:
+            self._landmarker.close()
+            self._landmarker = self._create_landmarker()
+        # VIDEO mode retains timestamps and tracking state, so one instance must
+        # never be shared by two independent input videos.
+        self._has_analyzed_video = True
+        return self._landmarker
 
     def close(self) -> None:
         self._landmarker.close()
@@ -104,6 +117,7 @@ class MediaPipePoseBackend:
         last_timestamp = -1
         frame_index = 0
         try:
+            landmarker = self._landmarker_for_next_video()
             while True:
                 ok, bgr = capture.read()
                 if not ok:
@@ -116,7 +130,7 @@ class MediaPipePoseBackend:
                 last_timestamp = timestamp_ms
                 rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
                 image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
-                result = self._landmarker.detect_for_video(image, timestamp_ms)
+                result = landmarker.detect_for_video(image, timestamp_ms)
                 selected = _select_candidate(result.pose_landmarks, previous_hip)
                 if selected is not None:
                     previous_hip = _hip_center(selected)
