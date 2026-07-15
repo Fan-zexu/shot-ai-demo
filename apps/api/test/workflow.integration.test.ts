@@ -50,6 +50,8 @@ test('template upload becomes ready only after a valid persisted artifact', asyn
   assert.equal(template.json().status, 'ready');
   assert.equal(template.json().quality.status, 'accepted');
   assert.equal(job.json().status, 'ready');
+  assert.equal(job.json().type, 'template');
+  assert.equal(job.json().entityId, created.templateId);
   assert.ok(job.json().completedStages.includes('writing_artifact'));
   assert.match(template.json().currentArtifactId, /^artifact_/);
 });
@@ -135,7 +137,7 @@ test('rejected input is not retryable', async (context) => {
   const template = await createReadyTemplate(app);
   worker.rejectUsers = true;
   const response = await createComparison(app, template.templateId);
-  const created = response.json() as { jobId: string };
+  const created = response.json() as { comparisonId: string; jobId: string };
   await app.jobRunner.drain();
 
   const job = await app.inject({ method: 'GET', url: `/api/v1/jobs/${created.jobId}` });
@@ -145,6 +147,8 @@ test('rejected input is not retryable', async (context) => {
   });
 
   assert.equal(job.json().status, 'rejected');
+  assert.equal(job.json().type, 'comparison');
+  assert.equal(job.json().entityId, created.comparisonId);
   assert.equal(job.json().error.code, 'USER_BODY_OUT_OF_FRAME');
   assert.equal(retry.statusCode, 409);
   assert.equal(retry.json().code, 'JOB_NOT_RETRYABLE');

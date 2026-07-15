@@ -5,6 +5,7 @@ import { Value } from '@sinclair/typebox/value';
 
 import {
   ComparisonResultSchema,
+  JobSummarySchema,
   MotionArtifactSchema,
   QualityReportSchema,
 } from '../src/index.ts';
@@ -49,4 +50,21 @@ test('release pose proxy cannot claim a real release event', () => {
   };
   invalid.events.release_pose_proxy.isProxy = false;
   assert.equal(Value.Check(MotionArtifactSchema, invalid), false);
+});
+
+test('job summaries retain their entity destination across a page refresh', () => {
+  const summary = {
+    id: 'job_example',
+    type: 'comparison',
+    entityId: 'cmp_example',
+    status: 'running',
+    stage: 'aligning_phases',
+    completedStages: ['validating_user', 'checking_compatibility'],
+    attempt: 1,
+    error: null,
+    updatedAt: '2026-07-15T10:00:00.000Z',
+  };
+  assert.equal(Value.Check(JobSummarySchema, summary), true);
+  const { entityId: _, ...missingDestination } = summary;
+  assert.equal(Value.Check(JobSummarySchema, missingDestination), false);
 });

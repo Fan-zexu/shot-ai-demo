@@ -10,6 +10,8 @@ export async function registerJobRoutes(app: FastifyInstance) {
     if (!job) throw appError('JOB_NOT_FOUND', 'Job was not found');
     const summary: JobSummary = {
       id: job.id,
+      type: job.type,
+      entityId: job.entityId,
       status: job.status,
       stage: job.stage,
       completedStages: job.completedStages,

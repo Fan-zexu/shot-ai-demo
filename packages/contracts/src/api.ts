@@ -9,6 +9,8 @@ const closed = { additionalProperties: false } as const;
 export const JobSummarySchema = Type.Object(
   {
     id: Type.String({ minLength: 1 }),
+    type: Type.Union([Type.Literal('template'), Type.Literal('comparison')]),
+    entityId: Type.String({ minLength: 1 }),
     status: JobStatusSchema,
     stage: Type.Union([Type.String({ minLength: 1 }), Type.Null()]),
     completedStages: Type.Array(Type.String({ minLength: 1 })),
@@ -55,4 +57,3 @@ export const ReportBundleSchema = Type.Object(
 export type JobSummary = Static<typeof JobSummarySchema>;
 export type ReportFrame = Static<typeof ReportFrameSchema>;
 export type ReportBundle = Static<typeof ReportBundleSchema>;
-
