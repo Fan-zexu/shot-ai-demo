@@ -40,6 +40,25 @@ importers:
         specifier: ^7.0.2
         version: 7.0.2
 
+  packages/comparison-engine:
+    dependencies:
+      '@shot-ai/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+    devDependencies:
+      '@sinclair/typebox':
+        specifier: ^0.34.52
+        version: 0.34.52
+      '@types/node':
+        specifier: ^24.10.9
+        version: 24.13.3
+      tsx:
+        specifier: ^4.23.1
+        version: 4.23.1
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+
   packages/contracts:
     dependencies:
       '@sinclair/typebox':

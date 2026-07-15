@@ -1,4 +1,4 @@
-import { type Static, Type } from '@sinclair/typebox';
+import { Type, type TLiteral, type TUnion } from '@sinclair/typebox';
 
 export const ShootingHands = ['left', 'right'] as const;
 export const SourceTypes = ['template', 'user'] as const;
@@ -30,8 +30,19 @@ export const QualityCheckStatuses = ['pass', 'fail', 'warning', 'not_applicable'
 export const JobStatuses = ['queued', 'running', 'ready', 'rejected', 'failed'] as const;
 export const PlaybackModes = ['side_by_side', 'skeleton_overlay', 'motion_channel'] as const;
 
-function literalUnion<const T extends readonly [string, ...string[]]>(values: T) {
-  return Type.Union(values.map((value) => Type.Literal(value)));
+type LiteralTuple<T extends readonly string[]> = T extends readonly [
+  infer Head extends string,
+  ...infer Tail extends readonly string[],
+]
+  ? [TLiteral<Head>, ...LiteralTuple<Tail>]
+  : [];
+
+function literalUnion<const T extends readonly [string, ...string[]]>(
+  values: T,
+): TUnion<LiteralTuple<T>> {
+  return Type.Union(
+    values.map((value) => Type.Literal(value)) as unknown as LiteralTuple<T>,
+  ) as unknown as TUnion<LiteralTuple<T>>;
 }
 
 export const ShootingHandSchema = literalUnion(ShootingHands);
@@ -44,15 +55,17 @@ export const QualityCheckStatusSchema = literalUnion(QualityCheckStatuses);
 export const JobStatusSchema = literalUnion(JobStatuses);
 export const PlaybackModeSchema = literalUnion(PlaybackModes);
 
-export type ShootingHand = Static<typeof ShootingHandSchema>;
-export type SourceType = Static<typeof SourceTypeSchema>;
-export type ViewType = Static<typeof ViewTypeSchema>;
-export type FacingDirection = Static<typeof FacingDirectionSchema>;
-export type BodyRegion = Static<typeof BodyRegionSchema>;
-export type MotionEventName = Static<typeof MotionEventNameSchema>;
-export type QualityCheckStatus = Static<typeof QualityCheckStatusSchema>;
-export type JobStatus = Static<typeof JobStatusSchema>;
-export type PlaybackMode = Static<typeof PlaybackModeSchema>;
+// Derive application types from the source tuples. The TypeBox schemas remain
+// the runtime validators, while these aliases retain exact literal unions.
+export type ShootingHand = (typeof ShootingHands)[number];
+export type SourceType = (typeof SourceTypes)[number];
+export type ViewType = (typeof ViewTypes)[number];
+export type FacingDirection = (typeof FacingDirections)[number];
+export type BodyRegion = (typeof BodyRegions)[number];
+export type MotionEventName = (typeof MotionEventNames)[number];
+export type QualityCheckStatus = (typeof QualityCheckStatuses)[number];
+export type JobStatus = (typeof JobStatuses)[number];
+export type PlaybackMode = (typeof PlaybackModes)[number];
 
 export const IdPrefix = {
   file: 'file_',
@@ -62,4 +75,3 @@ export const IdPrefix = {
   artifact: 'artifact_',
   result: 'result_',
 } as const;
-
