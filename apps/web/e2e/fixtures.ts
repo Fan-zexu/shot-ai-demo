@@ -5,7 +5,7 @@ import { MotionEventNames } from '@shot-ai/contracts';
 import { reportFixture } from '../test/report-fixture.ts';
 
 export async function openReadyReport(page: Page) {
-  const report = reportFixture();
+  const report = e2eReportFixture();
   await page.route('**/api/v1/comparisons/*/report', (route) => route.fulfill({ json: report }));
   await page.route('**/api/v1/files/*/video', (route) => route.fulfill({ status: 204 }));
   await page.route('**/api/v1/debug/comparisons/*/summary', (route) => route.fulfill({
@@ -13,6 +13,54 @@ export async function openReadyReport(page: Page) {
   }));
   await page.goto('/#/reports/cmp_e2e');
   await page.getByRole('heading', { name: '动作对比报告' }).waitFor();
+}
+
+function e2eReportFixture() {
+  const report = reportFixture();
+  const sourceTimeline = report.comparison.renderTimeline;
+  const sourceFrames = report.renderFrames;
+  const totalSamples = 300;
+  const eventSamples = [0, 60, 120, 180, 240, totalSamples - 1];
+
+  // The component fixture intentionally has only six samples so every event is
+  // easy to assert. Browser scheduling can consume that 200 ms clip before a
+  // mode-switch assertion runs, so E2E expands the same evidence to 10 seconds.
+  report.comparison.renderTimeline = Array.from({ length: totalSamples }, (_, sampleIndex) => {
+    const progress = sampleIndex / (totalSamples - 1);
+    const source = sourceTimeline[Math.round(progress * (sourceTimeline.length - 1))]!;
+    const phaseIndex = Math.min(4, Math.floor(sampleIndex / 60));
+    const phaseStart = eventSamples[phaseIndex]!;
+    const phaseEnd = eventSamples[phaseIndex + 1]!;
+    return {
+      ...source,
+      sampleIndex,
+      progress,
+      phaseIndex,
+      phaseProgress: (sampleIndex - phaseStart) / Math.max(1, phaseEnd - phaseStart),
+      templateFrameIndex: sampleIndex * 2,
+      templateTimestampMs: sampleIndex * (1000 / 30),
+      userFrameIndex: sampleIndex * 3,
+      userTimestampMs: sampleIndex * (1000 / 30),
+    };
+  });
+  report.comparison.phases = report.comparison.phases.map((phase, index) => ({
+    ...phase,
+    startSampleIndex: eventSamples[index]!,
+    endSampleIndex: eventSamples[index + 1]!,
+  }));
+  report.comparison.deviationWindows = [{
+    ...report.comparison.deviationWindows[0]!,
+    startSampleIndex: 60,
+    endSampleIndex: 240,
+  }];
+  report.comparison.previews.frameCount = totalSamples;
+  report.comparison.previews.durationMs = (totalSamples / 30) * 1000;
+  report.renderFrames = Array.from({ length: totalSamples }, (_, sampleIndex) => {
+    const progress = sampleIndex / (totalSamples - 1);
+    const source = sourceFrames[Math.round(progress * (sourceFrames.length - 1))]!;
+    return { ...source, sampleIndex };
+  });
+  return report;
 }
 
 function debugSummaryFixture() {
