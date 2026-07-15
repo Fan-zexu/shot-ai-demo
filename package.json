@@ -9,18 +9,25 @@
   },
   "scripts": {
     "build": "pnpm -r --if-present build",
+    "dev": "node scripts/dev.mjs",
+    "e2e": "playwright test",
+    "e2e:install": "playwright install chromium webkit",
     "env:check": "node scripts/check-env.mjs",
+    "format:check": "git diff --check",
     "model:download": "node scripts/download-pose-model.mjs",
     "python:install": ".venv/bin/python -m pip install -r services/pose-worker/requirements.lock",
     "test": "pnpm test:node && pnpm test:python",
     "test:node": "pnpm -r --if-present test",
     "test:python": "cd services/pose-worker && ../../.venv/bin/python -m pytest -q",
-    "typecheck": "pnpm -r --if-present typecheck",
+    "typecheck": "pnpm typecheck:tools && pnpm -r --if-present typecheck",
+    "typecheck:tools": "tsc -p tsconfig.tools.json",
+    "verify": "pnpm env:check && .venv/bin/python -m pip check && pnpm format:check && pnpm test && pnpm typecheck && pnpm build && pnpm e2e:install && pnpm e2e",
     "api:dev": "pnpm --filter @shot-ai/api dev",
     "web:dev": "pnpm --filter @shot-ai/web dev",
     "worker:dev": "cd services/pose-worker && ../../.venv/bin/uvicorn app.api.main:create_app --factory --host 127.0.0.1 --port 8001"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@types/node": "^24.10.9",
     "tsx": "^4.23.1",
     "typescript": "^7.0.2"

@@ -1,6 +1,6 @@
 # Shot Comparison MVP Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> 历史实现清单：步骤使用 checkbox（`- [ ]`）记录，不要求任何外部工作流或 skill。
 
 **Goal:** Build a local, real-video vertical slice that turns one reference-template video and one same-hand user video into one traceable comparison result rendered in three synchronized report modes.
 
