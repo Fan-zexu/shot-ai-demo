@@ -58,6 +58,21 @@ export async function registerDebugRoutes(app: FastifyInstance) {
       const templateArtifact = comparison.templateArtifactId
         ? app.services.artifacts.get(comparison.templateArtifactId)
         : null;
+      let templateArtifactEvidence = null;
+      if (templateArtifact) {
+        const file = app.services.files.getActive(templateArtifact.artifactFileId);
+        if (file) {
+          const artifact = await readGzipArtifact(
+            app.services.fileStore.resolvePath(file.relativePath),
+            MotionArtifactSchema,
+          );
+          templateArtifactEvidence = {
+            events: artifact.events,
+            provenance: artifact.provenance,
+            quality: artifact.quality,
+          };
+        }
+      }
       let artifactEvidence = null;
       if (userArtifact) {
         const file = app.services.files.getActive(userArtifact.artifactFileId);
@@ -95,6 +110,7 @@ export async function registerDebugRoutes(app: FastifyInstance) {
         job,
         quality,
         artifacts: { template: templateArtifact, user: userArtifact },
+        templateArtifactEvidence,
         artifactEvidence,
         resultEvidence,
       };

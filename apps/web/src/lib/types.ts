@@ -67,3 +67,40 @@ export interface CreateComparisonResponse {
   jobId: string;
   status: 'queued';
 }
+
+export interface DebugSummary {
+  job: { id: string } | null;
+  quality: {
+    checks: Array<{
+      code: string;
+      status: 'pass' | 'fail' | 'warning' | 'not_applicable';
+      measuredValue?: number | string | boolean;
+      threshold?: number | string | boolean;
+      message: string;
+      evidenceFrameIndices?: number[];
+    }>;
+  } | null;
+  artifacts: {
+    template: { id: string; artifactSha256: string } | null;
+    user: { id: string; artifactSha256: string } | null;
+  };
+  templateArtifactEvidence: ArtifactEvidence | null;
+  artifactEvidence: ArtifactEvidence | null;
+}
+
+interface ArtifactEvidence {
+  events: Record<string, {
+    frameIndex: number;
+    timestampMs: number;
+    confidence: number;
+    isProxy: boolean;
+  }>;
+  provenance: {
+    modelName: string;
+    modelVersion: string;
+    modelSha256: string;
+    pipelineVersion: string;
+    thresholdSnapshot: Record<string, number | string | boolean>;
+    stageDurationsMs: Record<string, number>;
+  };
+}

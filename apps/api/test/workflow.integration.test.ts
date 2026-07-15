@@ -128,6 +128,8 @@ test('a comparison produces one report bundle, aligned previews, and Range video
   });
   assert.equal(debugQuality.json().status, 'accepted');
   assert.equal(debugSummary.json().resultEvidence.compatibility.shootingHand, 'right');
+  assert.equal(typeof debugSummary.json().templateArtifactEvidence.events.prep_start.confidence, 'number');
+  assert.equal(typeof debugSummary.json().artifactEvidence.events.prep_start.confidence, 'number');
   assert.equal(resultExport.statusCode, 200);
   assert.equal(resultExport.headers['content-type'], 'application/gzip');
 });

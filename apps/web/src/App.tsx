@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { AppShell } from './components/AppShell.tsx';
 import { NewComparisonPage } from './pages/NewComparisonPage.tsx';
 import { ProcessingPage } from './pages/ProcessingPage.tsx';
-import { ReportReadyPage } from './pages/ReportReadyPage.tsx';
+import { ReportPage } from './pages/ReportPage.tsx';
 import { TemplatesPage } from './pages/TemplatesPage.tsx';
 
 interface Route {
@@ -34,7 +34,7 @@ export function App() {
   const job = route.pathname.match(/^\/jobs\/([^/]+)$/);
   if (job?.[1]) return <ProcessingPage jobId={decodeURIComponent(job[1])} />;
   const report = route.pathname.match(/^\/reports\/([^/]+)$/);
-  if (report?.[1]) return <ReportReadyPage comparisonId={decodeURIComponent(report[1])} />;
+  if (report?.[1]) return <ReportPage comparisonId={decodeURIComponent(report[1])} />;
 
   return (
     <AppShell active="templates">

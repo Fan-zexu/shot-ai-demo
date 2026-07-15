@@ -3,6 +3,7 @@ import type { JobSummary, ReportBundle, ShootingHand } from '@shot-ai/contracts'
 import type {
   CreateComparisonResponse,
   CreateTemplateResponse,
+  DebugSummary,
   PublicApiError,
   TemplateDetails,
   TemplateSummary,
@@ -11,6 +12,10 @@ import type {
 const API_PREFIX = `${import.meta.env.VITE_API_BASE_URL ?? ''}/api/v1`;
 
 export const MAX_UPLOAD_BYTES = 300 * 1024 * 1024;
+
+export function apiUrl(path: string) {
+  return `${API_PREFIX}${path}`;
+}
 
 export class ApiRequestError extends Error {
   constructor(readonly payload: PublicApiError) {
@@ -110,6 +115,10 @@ export function retryJob(jobId: string) {
 
 export function getReport(comparisonId: string) {
   return request<ReportBundle>(`/comparisons/${encodeURIComponent(comparisonId)}/report`);
+}
+
+export function getDebugSummary(comparisonId: string) {
+  return request<DebugSummary>(`/debug/comparisons/${encodeURIComponent(comparisonId)}/summary`);
 }
 
 export function toApiError(error: unknown): PublicApiError {
