@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.0",
+  "samples": [
+    {
+      "relativePath": "templates/right-hand-side.mp4",
+      "sourceType": "template",
+      "expectedStatus": "accepted",
+      "expectedRejectionCodes": [],
+      "shootingHand": "right",
+      "view": "shooting_side",
+      "normalSpeedConfirmed": true,
+      "defectTags": [],
+      "includeInEventError": true,
+      "annotationPath": "annotations/<video-sha256>.events.json"
+    }
+  ]
+}

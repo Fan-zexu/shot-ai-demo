@@ -1,0 +1,23 @@
+{
+  "name": "@shot-ai/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./fixtures": "./test/fixtures.ts"
+  },
+  "scripts": {
+    "test": "tsx --test test/**/*.test.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@sinclair/typebox": "^0.34.52"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.9",
+    "tsx": "^4.23.1",
+    "typescript": "^7.0.2"
+  }
+}
+

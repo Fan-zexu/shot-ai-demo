@@ -1,0 +1,41 @@
+# Node
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+
+# Python
+.venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+
+# Local environment and secrets
+.env
+.env.local
+!.env.example
+
+# Runtime data and downloaded models
+/data/
+/models/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.db
+*.task
+*.json.gz
+*.partial
+
+# Real or generated video assets
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+
+# OS and editor files
+.DS_Store
+.idea/
+.vscode/
+
