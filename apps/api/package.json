@@ -1,0 +1,21 @@
+{
+  "name": "@shot-ai/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "tsx --test test/**/*.test.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@shot-ai/contracts": "workspace:*",
+    "better-sqlite3": "^12.11.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^24.10.9",
+    "tsx": "^4.23.1",
+    "typescript": "^7.0.2"
+  }
+}
+
