@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
-from app.events.detect import detect_events
+from app.events.detect import detect_events, map_events_to_source_frames
 from app.events.from_frames import build_motion_signals
 from app.models import (
     AnalyzeMotionAccepted,
@@ -132,7 +132,10 @@ def analyze_motion(
     normalized_frames, skeleton = normalize_frames(frames)
     signals = build_motion_signals(normalized_frames, request.shooting_hand)
     try:
-        events = detect_events(signals, fps=metadata.nominal_fps)
+        events = map_events_to_source_frames(
+            detect_events(signals, fps=metadata.nominal_fps),
+            normalized_frames,
+        )
     except ValueError as error:
         code = str(error).split(":", 1)[0]
         if code not in {"MULTIPLE_ACTIONS_DETECTED", "INCOMPLETE_ACTION"}:

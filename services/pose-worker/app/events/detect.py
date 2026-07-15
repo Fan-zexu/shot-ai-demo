@@ -4,7 +4,7 @@ import numpy as np
 from scipy.signal import find_peaks
 
 from app.events.signals import MotionSignals
-from app.models import MotionEvent, MotionEventName
+from app.models import MotionEvent, MotionEventName, MotionFrame
 
 
 def _first_index(indices: np.ndarray, *, after: int, fallback: int) -> int:
@@ -100,3 +100,22 @@ def detect_events(signals: MotionSignals, *, fps: float) -> dict[MotionEventName
             is_proxy=name == "release_pose_proxy",
         )
     return result
+
+
+def map_events_to_source_frames(
+    events: dict[MotionEventName, MotionEvent],
+    frames: list[MotionFrame],
+) -> dict[MotionEventName, MotionEvent]:
+    """Replace dense signal offsets with original video frame references."""
+    mapped: dict[MotionEventName, MotionEvent] = {}
+    for name, event in events.items():
+        if event.frame_index >= len(frames):
+            raise ValueError("INCOMPLETE_ACTION: event points outside pose frames")
+        source_frame = frames[event.frame_index]
+        mapped[name] = event.model_copy(
+            update={
+                "frame_index": source_frame.frame_index,
+                "timestamp_ms": source_frame.timestamp_ms,
+            }
+        )
+    return mapped

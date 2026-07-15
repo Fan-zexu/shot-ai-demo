@@ -1,9 +1,11 @@
 import numpy as np
 import pytest
 
-from app.events.detect import detect_events
+from app.events.detect import detect_events, map_events_to_source_frames
 from app.events.signals import MotionSignals
-from app.models import MOTION_EVENT_NAMES
+from app.models import MOTION_EVENT_NAMES, MotionEvent
+from app.normalization.coordinates import normalize_frames
+from tests.fixtures import make_frames
 
 
 def test_detects_six_strictly_ordered_pose_events():
@@ -58,3 +60,29 @@ def test_multiple_shot_cycles_are_rejected_instead_of_silently_selecting_one():
 
     with pytest.raises(ValueError, match="MULTIPLE_ACTIONS_DETECTED"):
         detect_events(signals, fps=10)
+
+
+def test_event_offsets_are_mapped_back_to_original_video_frames():
+    motion_frames, _ = normalize_frames(make_frames(count=6))
+    source_frames = [
+        frame.model_copy(
+            update={"frame_index": index * 2, "timestamp_ms": index * (2000 / 30)}
+        )
+        for index, frame in enumerate(motion_frames)
+    ]
+    events = {
+        name: MotionEvent(
+            name=name,
+            frame_index=index,
+            timestamp_ms=index * (1000 / 30),
+            confidence=0.9,
+            evidence={"ordered": 1},
+            is_proxy=name == "release_pose_proxy",
+        )
+        for index, name in enumerate(MOTION_EVENT_NAMES)
+    }
+
+    mapped = map_events_to_source_frames(events, source_frames)
+
+    assert [mapped[name].frame_index for name in MOTION_EVENT_NAMES] == [0, 2, 4, 6, 8, 10]
+    assert mapped["follow_through_end"].timestamp_ms == pytest.approx(10000 / 30)
