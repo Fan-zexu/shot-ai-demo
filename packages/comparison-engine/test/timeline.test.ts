@@ -53,9 +53,15 @@ test('five phase-local alignments produce one schema-valid common render timelin
 test('an altered-speed template removes timestamp velocity from alignment', () => {
   const template = makeArtifact({
     sourceType: 'template',
+    frameCount: 11,
+    eventFrames: [0, 2, 4, 6, 8, 10],
     normalSpeedConfirmed: false,
   });
-  const user = makeArtifact({ sourceType: 'user' });
+  const user = makeArtifact({
+    sourceType: 'user',
+    frameCount: 81,
+    eventFrames: [0, 16, 32, 48, 64, 80],
+  });
 
   const result = compareMotions({
     comparisonId: 'cmp_altered_speed_template',
@@ -66,6 +72,33 @@ test('an altered-speed template removes timestamp velocity from alignment', () =
   });
 
   assert.equal(result.provenance.thresholdSnapshot.velocityWeight, 0);
+});
+
+test('large phase-length mismatch remains rejected when both speeds are trusted', () => {
+  const template = makeArtifact({
+    sourceType: 'template',
+    frameCount: 11,
+    eventFrames: [0, 2, 4, 6, 8, 10],
+    normalSpeedConfirmed: true,
+  });
+  const user = makeArtifact({
+    sourceType: 'user',
+    frameCount: 81,
+    eventFrames: [0, 16, 32, 48, 64, 80],
+  });
+
+  assert.throws(
+    () =>
+      compareMotions({
+        comparisonId: 'cmp_trusted_speed_mismatch',
+        template,
+        user,
+        templatePreviewFileId: 'file_template_preview',
+        userPreviewFileId: 'file_user_preview',
+      }),
+    (error: unknown) =>
+      error instanceof ComparisonRejected && error.code === 'LOW_ALIGNMENT_CONFIDENCE',
+  );
 });
 
 test('all modes can trace a highlighted region to numeric difference and confidence evidence', () => {

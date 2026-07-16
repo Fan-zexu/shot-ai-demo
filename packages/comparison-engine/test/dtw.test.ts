@@ -68,3 +68,18 @@ test('DTW rejects a path that would exceed the source-frame repetition limit', (
     /DTW_PATH_NOT_FOUND/,
   );
 });
+
+test('DTW keeps a connected band when one anchored phase has only two frames', () => {
+  const result = constrainedDtw({
+    template: sequence(2),
+    user: sequence(31),
+    bandRatio: 0.15,
+    maxRepeatedOutputFrames: 30,
+    weights: { angle: 1, position: 0, velocity: 0 },
+  });
+
+  assert.equal(result.path[0]!.templateIndex, 0);
+  assert.equal(result.path[0]!.userIndex, 0);
+  assert.equal(result.path.at(-1)!.templateIndex, 1);
+  assert.equal(result.path.at(-1)!.userIndex, 30);
+});

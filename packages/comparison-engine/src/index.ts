@@ -37,6 +37,14 @@ function resultId() {
   return `result_${randomUUID().replaceAll('-', '')}`;
 }
 
+function minimumRepeatLimit(firstLength: number, secondLength: number) {
+  // This is the smallest run length that can span the denser phase while both
+  // start/end events remain hard anchors on the sparser phase.
+  const shorterSteps = Math.max(1, Math.min(firstLength, secondLength) - 1);
+  const longerSteps = Math.max(firstLength, secondLength) - 1;
+  return Math.ceil(longerSteps / shorterSteps);
+}
+
 export function compareMotions(input: CompareInput): ComparisonOutput {
   const started = performance.now();
   const resolvedThresholds = resolveThresholds(input.thresholds);
@@ -47,7 +55,7 @@ export function compareMotions(input: CompareInput): ComparisonOutput {
     ? resolvedThresholds
     : {
         ...resolvedThresholds,
-        // A slowed or speed-ramped template keeps pose geometry, but its
+        // An unconfirmed or speed-ramped source keeps pose geometry, but its
         // timestamp-derived velocity is not the shooter's real velocity.
         featureWeights: {
           ...resolvedThresholds.featureWeights,
@@ -60,6 +68,15 @@ export function compareMotions(input: CompareInput): ComparisonOutput {
   const alignedPhases: AlignedPhase[] = phases.map((phase) => {
     let alignment;
     try {
+      const repeatLimit = timingComparable
+        ? thresholds.maxRepeatedOutputFrames
+        : Math.max(
+            thresholds.maxRepeatedOutputFrames,
+            minimumRepeatLimit(
+              phase.templateFrames.length,
+              phase.userFrames.length,
+            ),
+          );
       alignment = constrainedDtw({
         template: extractFrameFeatures(
           phase.templateFrames,
@@ -72,7 +89,7 @@ export function compareMotions(input: CompareInput): ComparisonOutput {
           compatibility.shootingHand,
         ),
         bandRatio: thresholds.bandRatio,
-        maxRepeatedOutputFrames: thresholds.maxRepeatedOutputFrames,
+        maxRepeatedOutputFrames: repeatLimit,
         weights: thresholds.featureWeights,
       });
     } catch (error) {

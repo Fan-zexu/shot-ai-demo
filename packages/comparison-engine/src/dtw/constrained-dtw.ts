@@ -52,9 +52,12 @@ export function constrainedDtw(input: ConstrainedDtwInput): DtwResult {
   const rows = input.template.length;
   const columns = input.user.length;
   if (rows < 2 || columns < 2) throw new Error('DTW requires at least two frames per side');
+  // A band narrower than half the coarser grid step can leave two otherwise
+  // valid anchored progress grids disconnected (for example, 2 vs 31 frames).
+  const coarseGridBand = 0.5 / Math.max(1, Math.min(rows - 1, columns - 1));
   const effectiveBand = Math.max(
     input.bandRatio,
-    1 / Math.max(rows - 1, columns - 1),
+    coarseGridBand,
   );
   const cells = Array.from({ length: rows }, () =>
     Array.from({ length: columns }, () => new Map<string, State>()),
