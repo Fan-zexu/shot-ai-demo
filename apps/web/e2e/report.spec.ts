@@ -56,6 +56,8 @@ test('overlay and channel keep one action-wide fit across the complete timeline'
   await page.getByRole('button', { name: /释放姿态代理/ }).click();
   await expect(overlay).toHaveAttribute('data-fit-scale', scale!);
   await expect(overlay).toHaveAttribute('data-fit-center', center!);
+  await expect(overlay.locator('.difference-link')).toHaveCount(0);
+  expect(await overlay.locator('[data-highlighted-region]').count()).toBeGreaterThan(0);
 
   await page.getByRole('button', { name: /动作通道/ }).click();
   const channel = page.locator('.motion-channel-renderer svg');

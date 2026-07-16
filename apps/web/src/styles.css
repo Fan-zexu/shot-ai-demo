@@ -1832,14 +1832,6 @@ input::placeholder {
 .normalized-stage .skeleton-template line { stroke-width: 3; }
 .normalized-stage .skeleton-layer circle { stroke-width: 1.5; }
 
-.difference-link {
-  stroke: var(--evidence);
-  stroke-width: 1.5;
-  stroke-dasharray: 3 4;
-  opacity: 0.8;
-  vector-effect: non-scaling-stroke;
-}
-
 .normalized-legend {
   position: absolute;
   bottom: 10px;

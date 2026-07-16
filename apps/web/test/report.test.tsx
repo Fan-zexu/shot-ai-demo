@@ -145,6 +145,15 @@ test('overlay and channel share one action-wide fit that does not change across 
   expect(channel).toHaveAttribute('data-fit-center', center);
 });
 
+test('overlay never draws ambiguous cross-skeleton difference links', async () => {
+  const user = userEvent.setup();
+  const { container } = render(<ReportWorkspace report={reportFixture()} />);
+
+  await user.click(screen.getByRole('button', { name: /骨架叠加/ }));
+  expect(container.querySelectorAll('[data-highlighted-region="shooting_arm"]').length).toBeGreaterThan(0);
+  expect(container.querySelectorAll('.difference-link')).toHaveLength(0);
+});
+
 test('event anchors map to the six shared timeline samples', () => {
   expect(eventSampleIndices(reportFixture().comparison)).toEqual({
     prep_start: 0,

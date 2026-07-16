@@ -1,9 +1,8 @@
 import { useState } from 'react';
 
-import type { BodyRegion, ReportBundle, ReportFrame, TimelineSample } from '@shot-ai/contracts';
+import type { ReportBundle, ReportFrame, TimelineSample } from '@shot-ai/contracts';
 
-import { projectNormalizedPoint, type ReportViewFit, type ViewTransform } from './fit-to-view.ts';
-import { regionIsAvailable } from './regions.ts';
+import type { ReportViewFit } from './fit-to-view.ts';
 import { SkeletonLayer } from './Skeleton.tsx';
 
 export function SkeletonOverlayRenderer({
@@ -41,13 +40,6 @@ export function SkeletonOverlayRenderer({
           data-fit-center={`${templateTransform.centerX.toFixed(3)},${templateTransform.centerY.toFixed(3)}`}
         >
           <CourtGrid />
-          <DifferenceLinks
-            frame={frame}
-            sample={sample}
-            shootingHand={report.template.shootingHand}
-            templateTransform={templateTransform}
-            userTransform={userTransform}
-          />
           <SkeletonLayer
             points={frame.templateNormalizedSkeleton}
             coordinateSpace="normalized"
@@ -88,58 +80,6 @@ function CourtGrid() {
       <line className="ground" x1="30" y1="360" x2="450" y2="360" />
     </g>
   );
-}
-
-function DifferenceLinks({
-  frame,
-  sample,
-  shootingHand,
-  templateTransform,
-  userTransform,
-}: {
-  frame: ReportFrame;
-  sample: TimelineSample;
-  shootingHand: ReportBundle['template']['shootingHand'];
-  templateTransform: ViewTransform;
-  userTransform: ViewTransform;
-}) {
-  const template = new Map(frame.templateNormalizedSkeleton.map((point) => [point.name, point]));
-  const user = new Map(frame.userNormalizedSkeleton.map((point) => [point.name, point]));
-  const names = regionLandmarks(shootingHand);
-  const links: React.ReactNode[] = [];
-  for (const [region, pointNames] of Object.entries(names) as Array<[BodyRegion, string[]]>) {
-    const difference = sample.differences[region];
-    if (!difference.highlighted || !regionIsAvailable(difference)) continue;
-    for (const name of pointNames) {
-      const templatePoint = template.get(name);
-      const userPoint = user.get(name);
-      if (!templatePoint || !userPoint) continue;
-      const templatePosition = projectNormalizedPoint(templatePoint, templateTransform);
-      const userPosition = projectNormalizedPoint(userPoint, userTransform);
-      links.push(
-        <line
-          key={`${region}-${name}`}
-          className="difference-link"
-          x1={templatePosition.x}
-          y1={templatePosition.y}
-          x2={userPosition.x}
-          y2={userPosition.y}
-          data-highlighted-region={region}
-        />,
-      );
-    }
-  }
-  return <g aria-hidden="true">{links}</g>;
-}
-
-function regionLandmarks(shootingHand: ReportBundle['template']['shootingHand']): Partial<Record<BodyRegion, string[]>> {
-  const guideHand = shootingHand === 'right' ? 'left' : 'right';
-  return {
-    lower_body: ['left_knee', 'right_knee', 'left_ankle', 'right_ankle'],
-    torso: ['left_shoulder', 'right_shoulder', 'left_hip', 'right_hip'],
-    shooting_arm: [`${shootingHand}_elbow`, `${shootingHand}_wrist`],
-    guide_arm: [`${guideHand}_elbow`, `${guideHand}_wrist`],
-  };
 }
 
 export { CourtGrid };
