@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useReducer } from 'react';
 
-import type { ComparisonResult, MotionEventName, PlaybackMode } from '@shot-ai/contracts';
+import type {
+  ComparisonResult,
+  DisplayTimelineSample,
+  MotionEventName,
+  PlaybackMode,
+} from '@shot-ai/contracts';
 
 export type PlaybackRate = 0.25 | 0.5 | 1;
 
@@ -9,20 +14,26 @@ export interface PlaybackState {
   playing: boolean;
   progress: number;
   sampleIndex: number;
+  displayFrameIndex: number;
   playbackRate: PlaybackRate;
   selectedEvent: MotionEventName | null;
-  autoSlowSuppressed: boolean;
 }
 
 export type PlaybackAction =
   | { type: 'set_mode'; mode: PlaybackMode }
   | { type: 'play'; totalSamples: number }
   | { type: 'pause' }
-  | { type: 'seek'; sampleIndex: number; totalSamples: number }
-  | { type: 'jump_event'; event: MotionEventName; sampleIndex: number; totalSamples: number }
+  | { type: 'seek'; sampleIndex: number; displayFrameIndex?: number; totalSamples: number }
+  | {
+      type: 'jump_event';
+      event: MotionEventName;
+      sampleIndex: number;
+      displayFrameIndex?: number;
+      totalSamples: number;
+    }
   | { type: 'set_rate'; rate: PlaybackRate }
-  | { type: 'advance'; totalSamples: number }
-  | { type: 'master_sample'; sampleIndex: number; totalSamples: number };
+  | { type: 'advance'; sampleIndex: number; displayFrameIndex: number; totalSamples: number }
+  | { type: 'master_sample'; sampleIndex: number; displayFrameIndex: number; totalSamples: number };
 
 export function initialPlaybackState(): PlaybackState {
   return {
@@ -30,9 +41,9 @@ export function initialPlaybackState(): PlaybackState {
     playing: false,
     progress: 0,
     sampleIndex: 0,
+    displayFrameIndex: 0,
     playbackRate: 1,
     selectedEvent: 'prep_start',
-    autoSlowSuppressed: false,
   };
 }
 
@@ -43,41 +54,42 @@ export function playbackReducer(state: PlaybackState, action: PlaybackAction): P
     case 'play': {
       const restart = state.sampleIndex >= action.totalSamples - 1;
       return {
-        ...atSample(state, restart ? 0 : state.sampleIndex, action.totalSamples),
+        ...atSample(
+          state,
+          restart ? 0 : state.sampleIndex,
+          action.totalSamples,
+          restart ? 0 : state.displayFrameIndex,
+        ),
         playing: true,
         selectedEvent: restart ? 'prep_start' : null,
-        autoSlowSuppressed: restart ? false : state.autoSlowSuppressed,
       };
     }
     case 'pause':
-      return { ...state, playing: false, autoSlowSuppressed: true };
+      return { ...state, playing: false };
     case 'seek':
       return {
-        ...atSample(state, action.sampleIndex, action.totalSamples),
+        ...atSample(state, action.sampleIndex, action.totalSamples, action.displayFrameIndex),
         playing: false,
         selectedEvent: null,
-        autoSlowSuppressed: true,
       };
     case 'jump_event':
       return {
-        ...atSample(state, action.sampleIndex, action.totalSamples),
+        ...atSample(state, action.sampleIndex, action.totalSamples, action.displayFrameIndex),
         playing: false,
         selectedEvent: action.event,
-        autoSlowSuppressed: true,
       };
     case 'set_rate':
-      return { ...state, playbackRate: action.rate, autoSlowSuppressed: true };
+      return { ...state, playbackRate: action.rate };
     case 'advance': {
-      const nextSample = Math.min(action.totalSamples - 1, state.sampleIndex + 1);
       return {
-        ...atSample(state, nextSample, action.totalSamples),
-        playing: nextSample < action.totalSamples - 1,
+        ...atSample(state, action.sampleIndex, action.totalSamples, action.displayFrameIndex),
+        playing: action.sampleIndex < action.totalSamples - 1,
         selectedEvent: null,
       };
     }
     case 'master_sample':
       return {
-        ...atSample(state, action.sampleIndex, action.totalSamples),
+        ...atSample(state, action.sampleIndex, action.totalSamples, action.displayFrameIndex),
         playing: state.playing && action.sampleIndex < action.totalSamples - 1,
         selectedEvent: null,
       };
@@ -86,41 +98,77 @@ export function playbackReducer(state: PlaybackState, action: PlaybackAction): P
 
 export function usePlayback(result: ComparisonResult) {
   const totalSamples = result.renderTimeline.length;
+  const displayTimeline = useMemo(() => displayTimelineFor(result), [result]);
   const [state, dispatch] = useReducer(playbackReducer, undefined, initialPlaybackState);
-  const inDifferenceWindow = useMemo(
-    () => result.deviationWindows.some(
-      (window) => state.sampleIndex >= window.startSampleIndex && state.sampleIndex <= window.endSampleIndex,
-    ),
-    [result.deviationWindows, state.sampleIndex],
-  );
-  const autoSlowed =
-    state.mode === 'skeleton_overlay' &&
-    state.playing &&
-    inDifferenceWindow &&
-    !state.autoSlowSuppressed &&
-    state.playbackRate > 0.5;
-  const effectiveRate: PlaybackRate = autoSlowed ? 0.5 : state.playbackRate;
+  const effectiveRate = state.playbackRate;
 
   useEffect(() => {
     if (!state.playing || state.mode === 'side_by_side') return;
     const interval = window.setInterval(
-      () => dispatch({ type: 'advance', totalSamples }),
+      () => {
+        const displayFrameIndex = Math.min(
+          displayTimeline.length - 1,
+          state.displayFrameIndex + 1,
+        );
+        dispatch({
+          type: 'advance',
+          totalSamples,
+          displayFrameIndex,
+          sampleIndex: displayTimeline[displayFrameIndex]!.alignmentSampleIndex,
+        });
+      },
       1000 / (result.previews.fps * effectiveRate),
     );
     return () => window.clearInterval(interval);
-  }, [effectiveRate, result.previews.fps, state.mode, state.playing, totalSamples]);
+  }, [
+    displayTimeline,
+    effectiveRate,
+    result.previews.fps,
+    state.displayFrameIndex,
+    state.mode,
+    state.playing,
+    totalSamples,
+  ]);
 
-  return { state, dispatch, totalSamples, effectiveRate, autoSlowed };
+  return { state, dispatch, totalSamples, displayTimeline, effectiveRate };
 }
 
-function atSample(state: PlaybackState, sampleIndex: number, totalSamples: number) {
+function atSample(
+  state: PlaybackState,
+  sampleIndex: number,
+  totalSamples: number,
+  displayFrameIndex = state.displayFrameIndex,
+) {
   const maximum = Math.max(0, totalSamples - 1);
   const bounded = Math.min(maximum, Math.max(0, Math.round(sampleIndex)));
   return {
     ...state,
     sampleIndex: bounded,
+    displayFrameIndex,
     progress: maximum === 0 ? 0 : bounded / maximum,
   };
+}
+
+export function displayTimelineFor(result: ComparisonResult): DisplayTimelineSample[] {
+  return result.displayTimeline ?? result.renderTimeline.map((sample) => ({
+    displayFrameIndex: sample.sampleIndex,
+    displayTimestampMs: sample.sampleIndex * 1000 / result.previews.fps,
+    alignmentSampleIndex: sample.sampleIndex,
+  }));
+}
+
+export function displayFrameForSample(
+  displayTimeline: DisplayTimelineSample[],
+  sampleIndex: number,
+) {
+  let closest = 0;
+  for (let index = 1; index < displayTimeline.length; index += 1) {
+    if (
+      Math.abs(displayTimeline[index]!.alignmentSampleIndex - sampleIndex) <
+      Math.abs(displayTimeline[closest]!.alignmentSampleIndex - sampleIndex)
+    ) closest = index;
+  }
+  return closest;
 }
 
 export function needsVideoCorrection(masterTime: number, followerTime: number) {

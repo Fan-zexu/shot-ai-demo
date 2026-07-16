@@ -94,6 +94,11 @@ export function reportFixture(): ReportBundle {
         endSampleIndex: index + 1,
       })),
       renderTimeline,
+      displayTimeline: renderTimeline.map((sample) => ({
+        displayFrameIndex: sample.sampleIndex,
+        displayTimestampMs: sample.sampleIndex * (1000 / 30),
+        alignmentSampleIndex: sample.sampleIndex,
+      })),
       deviationWindows: [{
         region: 'shooting_arm',
         startSampleIndex: 1,

@@ -29,6 +29,7 @@ export class FakeWorkerClient implements WorkerClient {
   failPreviewAttempts = 0;
   userAnalyzeCalls = 0;
   analyzeRequests: AnalyzeMotionRequest[] = [];
+  renderRequests: RenderAlignedPreviewsRequest[] = [];
 
   async health(): Promise<WorkerHealth> {
     return {
@@ -84,6 +85,7 @@ export class FakeWorkerClient implements WorkerClient {
   async renderAlignedPreviews(
     request: RenderAlignedPreviewsRequest,
   ): Promise<RenderAlignedPreviewsResponse> {
+    this.renderRequests.push(request);
     if (this.failPreviewAttempts > 0) {
       this.failPreviewAttempts -= 1;
       throw new AppError({

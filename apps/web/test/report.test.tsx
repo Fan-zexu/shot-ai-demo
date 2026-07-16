@@ -58,6 +58,20 @@ describe('shared report playback', () => {
     expect(screen.getByRole('button', { name: /释放姿态代理/ })).toBeInTheDocument();
     expect(screen.getByText('非真实离手检测')).toBeInTheDocument();
   });
+
+  test('aligned playback names its clock and never exposes a misleading 1x state', async () => {
+    const user = userEvent.setup();
+    render(<ReportWorkspace report={reportFixture()} />);
+
+    expect(screen.getByText('阶段同步播放')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '标准对齐速度' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByRole('button', { name: '1×' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /骨架叠加/ }));
+    await user.click(screen.getByRole('button', { name: '播放动作' }));
+    expect(screen.queryByText(/自动降速/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '标准对齐速度' })).toHaveAttribute('aria-pressed', 'true');
+  });
 });
 
 test('event anchors map to the six shared timeline samples', () => {

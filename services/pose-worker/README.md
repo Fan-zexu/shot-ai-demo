@@ -1,6 +1,6 @@
 # Pose Worker
 
-本地 Python Worker 负责把原始投篮视频转换为可比较的 `MotionArtifact`，并根据统一时间轴生成两条对齐预览视频。它只监听本机，由 Node API 通过内部接口调用，不直接暴露给 H5。
+本地 Python Worker 负责把原始投篮视频转换为可比较的 `MotionArtifact`，并根据比较引擎给出的独立显示时钟生成两条对齐预览视频。它只监听本机，由 Node API 通过内部接口调用，不直接暴露给 H5。
 
 ## 处理流程
 
@@ -28,7 +28,7 @@ pnpm worker:dev
 
 - `GET /internal/v1/health`：返回模型摘要和 Worker 忙闲状态。
 - `POST /internal/v1/analyze-motion`：执行质量门禁、姿态分析、事件检测并产出动作文件。
-- `POST /internal/v1/render-aligned-previews`：按比较引擎生成的共同时间轴输出固定 30 FPS、H.264、无音轨的双视频。
+- `POST /internal/v1/render-aligned-previews`：按比较引擎从完整对齐路径采样出的显示帧输出固定 30 FPS、H.264、无音轨的双视频。
 
 所有输入、输出路径都必须位于配置的数据根目录中。Worker 使用进程内互斥锁串行处理重任务，MVP 不并行加载多个 MediaPipe 推理任务。
 

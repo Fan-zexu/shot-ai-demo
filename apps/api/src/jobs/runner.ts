@@ -374,25 +374,33 @@ export class JobRunner {
       `${result.resultId}.user.mp4`,
     );
     try {
+      const displayTimeline = result.displayTimeline ?? result.renderTimeline.map((sample) => ({
+        displayFrameIndex: sample.sampleIndex,
+        displayTimestampMs: sample.sampleIndex * 1000 / 30,
+        alignmentSampleIndex: sample.sampleIndex,
+      }));
       const preview = await this.dependencies.worker.renderAlignedPreviews({
         templatePath: this.dependencies.fileStore.resolvePath(templateSource.relativePath),
         userPath: this.dependencies.fileStore.resolvePath(userSource.relativePath),
-        timeline: result.renderTimeline.map((sample) => ({
-          templateFrameIndex: sample.templateFrameIndex,
-          userFrameIndex: sample.userFrameIndex,
-        })),
+        timeline: displayTimeline.map((displaySample) => {
+          const alignmentSample = result.renderTimeline[displaySample.alignmentSampleIndex]!;
+          return {
+            templateFrameIndex: alignmentSample.templateFrameIndex,
+            userFrameIndex: alignmentSample.userFrameIndex,
+          };
+        }),
         templateOutputPath,
         userOutputPath,
       });
       if (
         preview.fps !== 30 ||
-        preview.frameCount !== result.renderTimeline.length ||
+        preview.frameCount !== displayTimeline.length ||
         Math.abs(preview.durationMs - (preview.frameCount * 1000) / 30) > 0.001
       ) {
         throw new AppError({
           code: 'PREVIEW_GENERATION_FAILED',
           category: 'system',
-          message: 'Worker preview cardinality does not match renderTimeline',
+          message: 'Worker preview cardinality does not match the display clock',
           retryable: true,
         });
       }

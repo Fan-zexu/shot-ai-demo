@@ -51,12 +51,20 @@ export function ReportPage({ comparisonId }: { comparisonId: string }) {
 }
 
 export function ReportWorkspace({ report }: { report: ReportBundle }) {
-  const { state, dispatch, totalSamples, effectiveRate, autoSlowed } = usePlayback(report.comparison);
+  const { state, dispatch, totalSamples, displayTimeline, effectiveRate } = usePlayback(report.comparison);
   const sample = report.comparison.renderTimeline[state.sampleIndex]!;
   const frame = report.renderFrames[state.sampleIndex]!;
-  const onMasterSample = useCallback(
-    (sampleIndex: number) => dispatch({ type: 'master_sample', sampleIndex, totalSamples }),
-    [dispatch, totalSamples],
+  const onMasterFrame = useCallback(
+    (displayFrameIndex: number) => {
+      const bounded = Math.min(displayTimeline.length - 1, Math.max(0, displayFrameIndex));
+      dispatch({
+        type: 'master_sample',
+        displayFrameIndex: bounded,
+        sampleIndex: displayTimeline[bounded]!.alignmentSampleIndex,
+        totalSamples,
+      });
+    },
+    [dispatch, displayTimeline, totalSamples],
   );
 
   return (
@@ -89,13 +97,13 @@ export function ReportWorkspace({ report }: { report: ReportBundle }) {
             sample={sample}
             state={state}
             effectiveRate={effectiveRate}
-            onMasterSample={onMasterSample}
+            onMasterFrame={onMasterFrame}
           />
         ) : null}
         {state.mode === 'skeleton_overlay' ? <SkeletonOverlayRenderer report={report} frame={frame} sample={sample} /> : null}
         {state.mode === 'motion_channel' ? <MotionChannelRenderer report={report} frame={frame} sample={sample} /> : null}
 
-        <PlaybackControls result={report.comparison} state={state} dispatch={dispatch} autoSlowed={autoSlowed} />
+        <PlaybackControls result={report.comparison} state={state} dispatch={dispatch} />
         <RegionEvidence differences={sample.differences} />
         <DebugPanel report={report} frame={frame} sample={sample} />
       </article>

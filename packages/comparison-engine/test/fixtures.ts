@@ -20,17 +20,19 @@ interface ArtifactOptions {
   comparableRegions?: BodyRegion[];
   confidenceByRegion?: Partial<Record<BodyRegion, number>>;
   normalSpeedConfirmed?: boolean;
+  nominalFps?: number;
 }
 
 function motionEvent<Name extends MotionEventName, Proxy extends boolean>(
   name: Name,
   frameIndex: number,
+  timestampMs: number,
   isProxy: Proxy,
 ) {
   return {
     name,
     frameIndex,
-    timestampMs: frameIndex * (1000 / 30),
+    timestampMs,
     confidence: 0.9,
     evidence: { ordered: 1 },
     isProxy,
@@ -62,6 +64,7 @@ function normalizedPose(progress: number, boneScale: number) {
 }
 
 export function makeArtifact(options: ArtifactOptions): MotionArtifact {
+  const nominalFps = options.nominalFps ?? 30;
   const frameCount = options.frameCount ?? (options.sourceType === 'template' ? 31 : 41);
   const eventFrames =
     options.eventFrames ??
@@ -76,7 +79,7 @@ export function makeArtifact(options: ArtifactOptions): MotionArtifact {
     const normalized = normalizedPose(progress, boneScale);
     return {
       frameIndex,
-      timestampMs: frameIndex * (1000 / 30),
+      timestampMs: frameIndex * (1000 / nominalFps),
       poseConfidence: 0.92,
       landmarks: normalized.map((point) => ({
         name: point.name,
@@ -106,11 +109,11 @@ export function makeArtifact(options: ArtifactOptions): MotionArtifact {
     sourceSha256: (options.sourceType === 'template' ? 'a' : 'c').repeat(64),
     createdAt: '2026-07-15T10:00:00.000Z',
     video: {
-      durationMs: frameCount * (1000 / 30),
+      durationMs: frameCount * (1000 / nominalFps),
       width: 1280,
       height: 720,
       rotationDeg: 0,
-      nominalFps: 30,
+      nominalFps,
       frameCount,
       container: 'mp4',
       codec: 'h264',
@@ -132,16 +135,17 @@ export function makeArtifact(options: ArtifactOptions): MotionArtifact {
       ),
     },
     events: {
-      prep_start: motionEvent('prep_start', prep, false),
-      body_lowest: motionEvent('body_lowest', lowest, false),
+      prep_start: motionEvent('prep_start', prep, frames[prep]!.timestampMs, false),
+      body_lowest: motionEvent('body_lowest', lowest, frames[lowest]!.timestampMs, false),
       lower_body_extension_start: motionEvent(
         'lower_body_extension_start',
         extension,
+        frames[extension]!.timestampMs,
         false,
       ),
-      shooting_arm_lift: motionEvent('shooting_arm_lift', lift, false),
-      release_pose_proxy: motionEvent('release_pose_proxy', release, true),
-      follow_through_end: motionEvent('follow_through_end', follow, false),
+      shooting_arm_lift: motionEvent('shooting_arm_lift', lift, frames[lift]!.timestampMs, false),
+      release_pose_proxy: motionEvent('release_pose_proxy', release, frames[release]!.timestampMs, true),
+      follow_through_end: motionEvent('follow_through_end', follow, frames[follow]!.timestampMs, false),
     },
     frames,
     canonicalSkeleton: {

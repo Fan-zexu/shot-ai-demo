@@ -3,7 +3,13 @@ import type { Dispatch } from 'react';
 import type { ComparisonResult, MotionEventName, PlaybackMode } from '@shot-ai/contracts';
 
 import { eventSampleIndices, phaseLabel, REPORT_EVENTS } from './events.ts';
-import type { PlaybackAction, PlaybackRate, PlaybackState } from './playback.ts';
+import {
+  displayFrameForSample,
+  displayTimelineFor,
+  type PlaybackAction,
+  type PlaybackRate,
+  type PlaybackState,
+} from './playback.ts';
 
 const MODE_OPTIONS: Array<{ mode: PlaybackMode; label: string; index: string }> = [
   { mode: 'side_by_side', label: '并排视频', index: '01' },
@@ -33,16 +39,15 @@ export function PlaybackControls({
   result,
   state,
   dispatch,
-  autoSlowed,
 }: {
   result: ComparisonResult;
   state: PlaybackState;
   dispatch: Dispatch<PlaybackAction>;
-  autoSlowed: boolean;
 }) {
   const totalSamples = result.renderTimeline.length;
   const current = result.renderTimeline[state.sampleIndex]!;
   const eventSamples = eventSampleIndices(result);
+  const displayTimeline = displayTimelineFor(result);
 
   return (
     <section className="playback-console" aria-label="统一播放控制">
@@ -74,6 +79,7 @@ export function PlaybackControls({
               onChange={(event) => dispatch({
                 type: 'seek',
                 sampleIndex: Number(event.target.value),
+                displayFrameIndex: displayFrameForSample(displayTimeline, Number(event.target.value)),
                 totalSamples,
               })}
             />
@@ -103,6 +109,7 @@ export function PlaybackControls({
               type: 'jump_event',
               event: event.name,
               sampleIndex: eventSamples[event.name],
+              displayFrameIndex: displayFrameForSample(displayTimeline, eventSamples[event.name]),
               totalSamples,
             })}
           >
@@ -114,18 +121,25 @@ export function PlaybackControls({
       </div>
 
       <div className="rate-control">
-        <span>播放速度</span>
+        <span>
+          <strong>{result.displayTimeline ? '阶段同步播放' : '旧版对齐播放'}</strong>
+          <small>
+            {result.displayTimeline
+              ? `源时间戳显示时钟 · ${(result.previews.durationMs / 1000).toFixed(2)} 秒`
+              : '固定 30 FPS 旧时间轴，时长不代表原片'}
+          </small>
+        </span>
         {([0.25, 0.5, 1] as PlaybackRate[]).map((rate) => (
           <button
             key={rate}
             type="button"
             aria-pressed={state.playbackRate === rate}
             onClick={() => dispatch({ type: 'set_rate', rate })}
+            aria-label={rate === 1 ? '标准对齐速度' : rate === 0.5 ? '二分之一慢放' : '四分之一慢放'}
           >
-            {rate}×
+            {rate === 1 ? '标准' : `${rate}×`}
           </button>
         ))}
-        {autoSlowed ? <em>差异窗口自动降速 0.5×</em> : null}
       </div>
     </section>
   );

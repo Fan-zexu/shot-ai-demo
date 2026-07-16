@@ -53,6 +53,11 @@ function e2eReportFixture() {
     startSampleIndex: 60,
     endSampleIndex: 240,
   }];
+  report.comparison.displayTimeline = report.comparison.renderTimeline.map((sample) => ({
+    displayFrameIndex: sample.sampleIndex,
+    displayTimestampMs: sample.sampleIndex * (1000 / 30),
+    alignmentSampleIndex: sample.sampleIndex,
+  }));
   report.comparison.previews.frameCount = totalSamples;
   report.comparison.previews.durationMs = (totalSamples / 30) * 1000;
   report.renderFrames = Array.from({ length: totalSamples }, (_, sampleIndex) => {

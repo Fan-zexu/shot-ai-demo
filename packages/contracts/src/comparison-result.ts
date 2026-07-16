@@ -60,6 +60,15 @@ export const TimelineSampleSchema = Type.Object(
   closed,
 );
 
+export const DisplayTimelineSampleSchema = Type.Object(
+  {
+    displayFrameIndex: Type.Integer({ minimum: 0 }),
+    displayTimestampMs: Type.Number({ minimum: 0 }),
+    alignmentSampleIndex: Type.Integer({ minimum: 0 }),
+  },
+  closed,
+);
+
 export const DeviationWindowSchema = Type.Object(
   {
     region: BodyRegionSchema,
@@ -104,6 +113,9 @@ export const ComparisonResultSchema = Type.Object(
       { minItems: 5, maxItems: 5 },
     ),
     renderTimeline: Type.Array(TimelineSampleSchema, { minItems: 1 }),
+    // Added as an optional, backwards-compatible field so immutable reports
+    // generated before the display clock existed remain readable.
+    displayTimeline: Type.Optional(Type.Array(DisplayTimelineSampleSchema, { minItems: 1 })),
     deviationWindows: Type.Array(DeviationWindowSchema),
     visualization: Type.Object(
       {
@@ -137,6 +149,6 @@ export const ComparisonResultSchema = Type.Object(
 export type RegionDifference = Static<typeof RegionDifferenceSchema>;
 export type RegionDifferences = Static<typeof RegionDifferencesSchema>;
 export type TimelineSample = Static<typeof TimelineSampleSchema>;
+export type DisplayTimelineSample = Static<typeof DisplayTimelineSampleSchema>;
 export type DeviationWindow = Static<typeof DeviationWindowSchema>;
 export type ComparisonResult = Static<typeof ComparisonResultSchema>;
-

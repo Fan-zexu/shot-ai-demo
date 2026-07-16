@@ -12,7 +12,7 @@ interface SideBySideRendererProps {
   sample: TimelineSample;
   state: PlaybackState;
   effectiveRate: PlaybackRate;
-  onMasterSample: (sampleIndex: number) => void;
+  onMasterFrame: (displayFrameIndex: number) => void;
 }
 
 interface FrameVideo {
@@ -26,7 +26,7 @@ export function SideBySideRenderer({
   sample,
   state,
   effectiveRate,
-  onMasterSample,
+  onMasterFrame,
 }: SideBySideRendererProps) {
   const templateRef = useRef<HTMLVideoElement>(null);
   const userRef = useRef<HTMLVideoElement>(null);
@@ -53,7 +53,7 @@ export function SideBySideRenderer({
     const template = templateRef.current;
     const user = userRef.current;
     if (!template || !user) return;
-    const targetTime = state.sampleIndex / fps;
+    const targetTime = state.displayFrameIndex / fps;
     template.playbackRate = effectiveRate;
     user.playbackRate = effectiveRate;
     if (!state.playing) {
@@ -90,7 +90,7 @@ export function SideBySideRenderer({
         if (needsVideoCorrection(user.currentTime, template.currentTime)) {
           template.currentTime = user.currentTime;
         }
-        onMasterSample(Math.round(user.currentTime * fps));
+        onMasterFrame(Math.round(user.currentTime * fps));
       }
       if (requestFrame) callbackId = requestFrame.call(user, sync);
       else callbackId = window.requestAnimationFrame(sync);
@@ -106,7 +106,7 @@ export function SideBySideRenderer({
         window.cancelAnimationFrame(callbackId);
       }
     };
-  }, [fps, onMasterSample, state.playing]);
+  }, [fps, onMasterFrame, state.playing]);
 
   const handleWaiting = () => {
     setBuffering(true);
@@ -126,7 +126,7 @@ export function SideBySideRenderer({
   return (
     <section className="renderer side-by-side-renderer" aria-label="并排视频对比">
       <div className="renderer-toolbar">
-        <div><span className="eyebrow">MODE 01</span><strong>同步原画 / 单一时间轴</strong></div>
+        <div><span className="eyebrow">MODE 01</span><strong>阶段同步视频 / 独立显示时钟</strong></div>
         <label className="compact-toggle">
           <input type="checkbox" checked={showSkeleton} onChange={(event) => setShowSkeleton(event.target.checked)} />
           <span>显示骨架</span>

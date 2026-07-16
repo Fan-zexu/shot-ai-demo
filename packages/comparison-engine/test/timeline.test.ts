@@ -27,8 +27,8 @@ test('five phase-local alignments produce one schema-valid common render timelin
 
   assert.equal(Value.Check(ComparisonResultSchema, result), true);
   assert.equal(result.phases.length, 5);
-  assert.equal(result.renderTimeline.length, result.previews.frameCount);
-  assert.equal(result.previews.durationMs, (result.renderTimeline.length * 1000) / 30);
+  assert.equal(result.displayTimeline?.length, result.previews.frameCount);
+  assert.equal(result.previews.durationMs, (result.previews.frameCount * 1000) / 30);
   assert.equal(result.renderTimeline[0]!.progress, 0);
   assert.equal(result.renderTimeline.at(-1)!.progress, 1);
   for (let index = 1; index < result.renderTimeline.length; index += 1) {
@@ -48,6 +48,66 @@ test('five phase-local alignments produce one schema-valid common render timelin
     assert.equal(end.userFrameIndex, user.events[eventNames[index + 1]!].frameIndex);
     if (index > 0) assert.equal(phase.startSampleIndex, result.phases[index - 1]!.endSampleIndex);
   });
+});
+
+for (const fps of [30, 60, 120]) {
+  test(`${fps} FPS input keeps a two-second display clock instead of stretching DTW samples`, () => {
+    const frameCount = fps * 2;
+    const lastFrame = frameCount - 1;
+    const eventFrames = [
+      0,
+      Math.round(lastFrame * 0.2),
+      Math.round(lastFrame * 0.4),
+      Math.round(lastFrame * 0.6),
+      Math.round(lastFrame * 0.8),
+      lastFrame,
+    ] as [number, number, number, number, number, number];
+    const template = makeArtifact({ sourceType: 'template', frameCount, eventFrames, nominalFps: fps });
+    const user = makeArtifact({ sourceType: 'user', frameCount, eventFrames, nominalFps: fps });
+
+    const result = compareMotions({
+      comparisonId: `cmp_${fps}fps`,
+      template,
+      user,
+      templatePreviewFileId: 'file_template_preview',
+      userPreviewFileId: 'file_user_preview',
+    });
+
+    assert.equal(result.previews.durationMs, 2_000);
+    assert.equal(result.previews.frameCount, 60);
+    assert.equal(result.displayTimeline?.length, 60);
+    assert.equal(result.displayTimeline?.[0]?.alignmentSampleIndex, 0);
+    assert.equal(result.displayTimeline?.at(-1)?.alignmentSampleIndex, result.renderTimeline.length - 1);
+  });
+}
+
+test('120 FPS report characteristics keep the alignment path but display near source time', () => {
+  const template = makeArtifact({
+    sourceType: 'template',
+    frameCount: 248,
+    eventFrames: [94, 121, 149, 176, 204, 231],
+    nominalFps: 120,
+    normalSpeedConfirmed: false,
+  });
+  const user = makeArtifact({
+    sourceType: 'user',
+    frameCount: 264,
+    eventFrames: [113, 139, 166, 192, 219, 245],
+    nominalFps: 120,
+    normalSpeedConfirmed: false,
+  });
+
+  const result = compareMotions({
+    comparisonId: 'cmp_50e_characteristic',
+    template,
+    user,
+    templatePreviewFileId: 'file_template_preview',
+    userPreviewFileId: 'file_user_preview',
+  });
+
+  assert.ok(result.renderTimeline.length > result.previews.frameCount);
+  assert.ok(result.previews.durationMs >= 1_100);
+  assert.ok(result.previews.durationMs <= 1_200);
 });
 
 test('an altered-speed template removes timestamp velocity from alignment', () => {

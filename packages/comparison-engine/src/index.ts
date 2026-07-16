@@ -12,6 +12,7 @@ import { extractFrameFeatures } from './features/extract.ts';
 import { splitPhases } from './phases/split.ts';
 import { retargetPair } from './retarget/pair.ts';
 import { buildTimeline } from './timeline/build.ts';
+import { buildDisplayTimeline } from './timeline/display-clock.ts';
 import {
   ComparisonRejected,
   type AlignedPhase,
@@ -124,6 +125,7 @@ export function compareMotions(input: CompareInput): ComparisonOutput {
     thresholds,
   });
   const renderTimeline = applyHighlightPersistence(built.timeline, thresholds);
+  const displayTimeline = buildDisplayTimeline(renderTimeline);
   const elapsed = performance.now() - started;
   const result: ComparisonResult = {
     schemaVersion: '1.0',
@@ -135,6 +137,7 @@ export function compareMotions(input: CompareInput): ComparisonOutput {
     compatibility,
     phases: built.phases,
     renderTimeline,
+    displayTimeline,
     deviationWindows: mergeDeviationWindows(
       renderTimeline,
       thresholds.windowMergeGapFrames,
@@ -145,13 +148,13 @@ export function compareMotions(input: CompareInput): ComparisonOutput {
     },
     previews: {
       fps: 30,
-      frameCount: renderTimeline.length,
-      durationMs: (renderTimeline.length * 1000) / 30,
+      frameCount: displayTimeline.length,
+      durationMs: (displayTimeline.length * 1000) / 30,
       templateVideoFileId: input.templatePreviewFileId,
       userVideoFileId: input.userPreviewFileId,
     },
     provenance: {
-      comparisonAlgorithmVersion: '1.0.0',
+      comparisonAlgorithmVersion: '1.1.0',
       thresholdSnapshot: thresholdSnapshot(thresholds),
       stageDurationsMs: { compare: Number(elapsed.toFixed(3)) },
     },

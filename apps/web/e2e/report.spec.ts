@@ -48,7 +48,7 @@ test('320px report keeps two video columns and 44px touch targets', async ({ pag
     page.getByRole('button', { name: '播放动作' }),
     page.getByRole('slider', { name: '动作阶段进度' }),
     page.getByRole('button', { name: /准备开始/ }),
-    page.getByRole('button', { name: '0.25×' }),
+    page.getByRole('button', { name: '四分之一慢放' }),
   ]) {
     expect((await control.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
   }

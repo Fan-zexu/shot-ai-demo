@@ -89,6 +89,14 @@ test('a comparison produces one report bundle, aligned previews, and Range video
     report.json().renderFrames.length,
     report.json().comparison.renderTimeline.length,
   );
+  assert.equal(
+    worker.renderRequests[0]!.timeline.length,
+    report.json().comparison.displayTimeline.length,
+  );
+  assert.equal(
+    report.json().comparison.previews.frameCount,
+    report.json().comparison.displayTimeline.length,
+  );
   assert.match(report.json().comparison.previews.templateVideoFileId, /^file_/);
   assert.match(report.json().comparison.previews.userVideoFileId, /^file_/);
   const videoUrl = report.json().user.previewVideoUrl as string;
