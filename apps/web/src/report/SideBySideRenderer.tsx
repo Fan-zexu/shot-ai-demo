@@ -12,13 +12,8 @@ interface SideBySideRendererProps {
   sample: TimelineSample;
   state: PlaybackState;
   effectiveRate: PlaybackRate;
-  onMasterFrame: (displayFrameIndex: number) => void;
+  onPlaybackBlocked: () => void;
   showAllLandmarks: boolean;
-}
-
-interface FrameVideo {
-  requestVideoFrameCallback?: (callback: () => void) => number;
-  cancelVideoFrameCallback?: (handle: number) => void;
 }
 
 export function SideBySideRenderer({
@@ -27,7 +22,7 @@ export function SideBySideRenderer({
   sample,
   state,
   effectiveRate,
-  onMasterFrame,
+  onPlaybackBlocked,
   showAllLandmarks,
 }: SideBySideRendererProps) {
   const templateRef = useRef<HTMLVideoElement>(null);
@@ -55,7 +50,7 @@ export function SideBySideRenderer({
     const template = templateRef.current;
     const user = userRef.current;
     if (!template || !user) return;
-    const targetTime = state.displayFrameIndex / fps;
+    const targetTime = state.displayPosition / fps;
     template.playbackRate = effectiveRate;
     user.playbackRate = effectiveRate;
     if (!state.playing) {
@@ -65,55 +60,16 @@ export function SideBySideRenderer({
       if (Math.abs(user.currentTime - targetTime) > 0.015) user.currentTime = targetTime;
       return;
     }
-    if (Math.abs(user.currentTime - targetTime) > 0.08) user.currentTime = targetTime;
-    if (Math.abs(template.currentTime - targetTime) > 0.08) template.currentTime = targetTime;
+    if (needsVideoCorrection(targetTime, user.currentTime)) user.currentTime = targetTime;
+    if (needsVideoCorrection(targetTime, template.currentTime)) template.currentTime = targetTime;
     if (user.paused || template.paused) void playBoth();
-  }, [effectiveRate, fps, playBoth, state.playing, state.sampleIndex]);
-
-  useEffect(() => {
-    if (!state.playing) return;
-    const user = userRef.current;
-    const template = templateRef.current;
-    if (!user || !template) return;
-    const frameApi = user as unknown as FrameVideo;
-    const requestFrame = frameApi.requestVideoFrameCallback;
-    const cancelFrame = frameApi.cancelVideoFrameCallback;
-    let cancelled = false;
-    let callbackId = 0;
-
-    const sync = () => {
-      if (cancelled) return;
-      if (user.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || template.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
-        setBuffering(true);
-        user.pause();
-        template.pause();
-      } else {
-        setBuffering(false);
-        if (needsVideoCorrection(user.currentTime, template.currentTime)) {
-          template.currentTime = user.currentTime;
-        }
-        onMasterFrame(Math.round(user.currentTime * fps));
-      }
-      if (requestFrame) callbackId = requestFrame.call(user, sync);
-      else callbackId = window.requestAnimationFrame(sync);
-    };
-
-    if (requestFrame) callbackId = requestFrame.call(user, sync);
-    else callbackId = window.requestAnimationFrame(sync);
-    return () => {
-      cancelled = true;
-      if (cancelFrame && requestFrame) {
-        cancelFrame.call(user, callbackId);
-      } else {
-        window.cancelAnimationFrame(callbackId);
-      }
-    };
-  }, [fps, onMasterFrame, state.playing]);
+  }, [effectiveRate, fps, playBoth, state.displayPosition, state.playing]);
 
   const handleWaiting = () => {
     setBuffering(true);
     templateRef.current?.pause();
     userRef.current?.pause();
+    onPlaybackBlocked();
   };
   const handleCanPlay = () => {
     const template = templateRef.current;

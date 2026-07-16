@@ -5,18 +5,25 @@ import type { BodyRegion, ReportBundle, ReportFrame, TimelineSample } from '@sho
 import { apiUrl, getDebugSummary, toApiError } from '../lib/api.ts';
 import type { DebugSummary, PublicApiError } from '../lib/types.ts';
 import { eventSampleIndices, REPORT_EVENTS } from './events.ts';
+import type { PlaybackDiagnostics } from './motion-presentation.ts';
 import { REGION_LABELS, REGION_ORDER } from './regions.ts';
 
 export function DebugPanel({
   report,
   frame,
   sample,
+  diagnostics,
+  renderFps,
+  presentationActive,
   showAllLandmarks,
   onShowAllLandmarksChange,
 }: {
   report: ReportBundle;
   frame: ReportFrame;
   sample: TimelineSample;
+  diagnostics: PlaybackDiagnostics;
+  renderFps: number;
+  presentationActive: boolean;
   showAllLandmarks: boolean;
   onShowAllLandmarksChange: (show: boolean) => void;
 }) {
@@ -39,6 +46,36 @@ export function DebugPanel({
         <code>{report.comparison.resultId}</code>
       </summary>
       <div className="debug-content">
+        <section className="debug-playback-diagnostics">
+          <h3>播放质量诊断</h3>
+          <dl className="debug-metrics">
+            <div>
+              <dt>模板重复映射</dt>
+              <dd>{diagnostics.templateRepeatedMappings} / {diagnostics.alignmentTransitions} · {diagnostics.templateRepeatedPercent}%</dd>
+            </div>
+            <div>
+              <dt>用户重复映射</dt>
+              <dd>{diagnostics.userRepeatedMappings} / {diagnostics.alignmentTransitions} · {diagnostics.userRepeatedPercent}%</dd>
+            </div>
+            <div>
+              <dt>模板峰值跳变</dt>
+              <dd>{jumpLabel(diagnostics.templatePeakJump)}</dd>
+            </div>
+            <div>
+              <dt>用户峰值跳变</dt>
+              <dd>{jumpLabel(diagnostics.userPeakJump)}</dd>
+            </div>
+            <div>
+              <dt>实际渲染 FPS</dt>
+              <dd>{presentationActive ? renderFps || '采样中' : '播放后采样'}</dd>
+            </div>
+            <div>
+              <dt>当前展示来源</dt>
+              <dd>{presentationActive ? '插值 + 低延迟平滑副本' : '原始分析帧'}</dd>
+            </div>
+          </dl>
+          <p>重复率来自不可变 DTW 对齐路径；跳变来自原始显示采样。插值和平滑只用于播放展示，暂停、拖动、六事件和导出仍读取原始分析数据。</p>
+        </section>
         <section className="debug-landmark-control">
           <h3>骨架显示</h3>
           <label>
@@ -195,6 +232,10 @@ function averageConfidence(points: ReportFrame['templateNormalizedSkeleton']) {
 
 function confidenceLabel(value: number | undefined) {
   return value === undefined ? '—' : `${Math.round(value * 100)}%`;
+}
+
+function jumpLabel(jump: PlaybackDiagnostics['templatePeakJump']) {
+  return `${jump.landmark} · ${jump.distance.toFixed(3)} · F${jump.fromDisplayFrame}→F${jump.toDisplayFrame}`;
 }
 
 function landmarkConfidenceRows(frame: ReportFrame) {

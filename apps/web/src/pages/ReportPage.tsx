@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import type { ReportBundle } from '@shot-ai/contracts';
 
@@ -8,7 +8,12 @@ import type { PublicApiError } from '../lib/types.ts';
 import { DebugPanel } from '../report/DebugPanel.tsx';
 import { ModeSwitcher, PlaybackControls } from '../report/PlaybackControls.tsx';
 import { MotionChannelRenderer } from '../report/MotionChannelRenderer.tsx';
-import { usePlayback } from '../report/playback.ts';
+import {
+  buildPresentationSequence,
+  interpolateReportFrames,
+  playbackDiagnostics,
+} from '../report/motion-presentation.ts';
+import { usePlayback, useRenderFps } from '../report/playback.ts';
 import { RegionEvidence } from '../report/RegionEvidence.tsx';
 import { SideBySideRenderer } from '../report/SideBySideRenderer.tsx';
 import { SkeletonOverlayRenderer } from '../report/SkeletonOverlayRenderer.tsx';
@@ -52,21 +57,22 @@ export function ReportPage({ comparisonId }: { comparisonId: string }) {
 
 export function ReportWorkspace({ report }: { report: ReportBundle }) {
   const [showAllLandmarks, setShowAllLandmarks] = useState(false);
-  const { state, dispatch, totalSamples, displayTimeline, effectiveRate } = usePlayback(report.comparison);
+  const { state, dispatch, totalSamples, effectiveRate } = usePlayback(report.comparison);
   const sample = report.comparison.renderTimeline[state.sampleIndex]!;
-  const frame = report.renderFrames[state.sampleIndex]!;
-  const onMasterFrame = useCallback(
-    (displayFrameIndex: number) => {
-      const bounded = Math.min(displayTimeline.length - 1, Math.max(0, displayFrameIndex));
-      dispatch({
-        type: 'master_sample',
-        displayFrameIndex: bounded,
-        sampleIndex: displayTimeline[bounded]!.alignmentSampleIndex,
-        totalSamples,
-      });
-    },
-    [dispatch, displayTimeline, totalSamples],
-  );
+  const rawFrame = report.renderFrames[state.sampleIndex]!;
+  const presentationSequence = useMemo(() => buildPresentationSequence(report), [report]);
+  const diagnostics = useMemo(() => playbackDiagnostics(report), [report]);
+  const presentationFrame = useMemo(() => {
+    if (!state.playing) return rawFrame;
+    const startIndex = Math.min(presentationSequence.length - 1, Math.floor(state.displayPosition));
+    const endIndex = Math.min(presentationSequence.length - 1, startIndex + 1);
+    return interpolateReportFrames(
+      presentationSequence[startIndex]!,
+      presentationSequence[endIndex]!,
+      state.displayPosition - startIndex,
+    );
+  }, [presentationSequence, rawFrame, state.displayPosition, state.playing]);
+  const renderFps = useRenderFps(state.playing, state.displayPosition);
 
   return (
     <AppShell active="report">
@@ -75,6 +81,8 @@ export function ReportWorkspace({ report }: { report: ReportBundle }) {
         data-mode={state.mode}
         data-sample-index={state.sampleIndex}
         data-playing={state.playing}
+        data-display-position={state.displayPosition.toFixed(3)}
+        data-display-source={state.playing ? 'smoothed-interpolated-copy' : 'raw-analysis-frame'}
       >
         <header className="report-header">
           <div>
@@ -94,18 +102,18 @@ export function ReportWorkspace({ report }: { report: ReportBundle }) {
         {state.mode === 'side_by_side' ? (
           <SideBySideRenderer
             report={report}
-            frame={frame}
+            frame={presentationFrame}
             sample={sample}
             state={state}
             effectiveRate={effectiveRate}
-            onMasterFrame={onMasterFrame}
+            onPlaybackBlocked={() => dispatch({ type: 'pause' })}
             showAllLandmarks={showAllLandmarks}
           />
         ) : null}
         {state.mode === 'skeleton_overlay' ? (
           <SkeletonOverlayRenderer
             report={report}
-            frame={frame}
+            frame={presentationFrame}
             sample={sample}
             showAllLandmarks={showAllLandmarks}
           />
@@ -113,7 +121,7 @@ export function ReportWorkspace({ report }: { report: ReportBundle }) {
         {state.mode === 'motion_channel' ? (
           <MotionChannelRenderer
             report={report}
-            frame={frame}
+            frame={presentationFrame}
             sample={sample}
             showAllLandmarks={showAllLandmarks}
           />
@@ -123,8 +131,11 @@ export function ReportWorkspace({ report }: { report: ReportBundle }) {
         <RegionEvidence differences={sample.differences} />
         <DebugPanel
           report={report}
-          frame={frame}
+          frame={rawFrame}
           sample={sample}
+          diagnostics={diagnostics}
+          renderFps={renderFps}
+          presentationActive={state.playing}
           showAllLandmarks={showAllLandmarks}
           onShowAllLandmarksChange={setShowAllLandmarks}
         />

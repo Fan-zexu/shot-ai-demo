@@ -25,6 +25,27 @@ test('three report modes preserve the shared sample and playing state', async ({
   await expect(workspace).toHaveAttribute('data-playing', 'false');
 });
 
+test('one animation clock drives interpolated playback without rewriting event anchors', async ({ page }) => {
+  await openReadyReport(page);
+  const workspace = page.locator('.report-workspace');
+
+  await page.getByRole('button', { name: /骨架叠加/ }).click();
+  await page.locator('.debug-panel > summary').click();
+  const startPosition = Number(await workspace.getAttribute('data-display-position'));
+  await page.getByRole('button', { name: '播放动作' }).click();
+
+  await expect(workspace).toHaveAttribute('data-display-source', 'smoothed-interpolated-copy');
+  await expect.poll(async () => Number(await workspace.getAttribute('data-display-position'))).toBeGreaterThan(startPosition + 1);
+  const fpsValue = page.locator('.debug-playback-diagnostics div').filter({ hasText: '实际渲染 FPS' }).locator('dd');
+  await expect.poll(async () => Number(await fpsValue.textContent())).toBeGreaterThan(0);
+
+  await page.getByRole('button', { name: '暂停动作' }).click();
+  await page.getByRole('button', { name: /释放姿态代理/ }).click();
+  await expect(workspace).toHaveAttribute('data-playing', 'false');
+  await expect(workspace).toHaveAttribute('data-display-source', 'raw-analysis-frame');
+  await expect(workspace).toHaveAttribute('data-sample-index', '240');
+});
+
 test('320px report keeps two video columns and 44px touch targets', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await openReadyReport(page);
@@ -65,6 +86,8 @@ test('desktop debug evidence exposes confidence, provenance, and exports', async
   await expect(eventRow).toContainText('94%');
   await expect(eventRow).toContainText('92%');
   await expect(page.getByRole('heading', { name: '当前关键点置信度' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '播放质量诊断' })).toBeVisible();
+  await expect(page.getByText(/重复率来自不可变 DTW 对齐路径/)).toBeVisible();
   await expect(page.locator('.debug-curves article')).toHaveCount(5);
   await expect(page.getByText('全身持续在画面内')).toBeVisible();
   await expect(page.locator('.debug-exports a')).toHaveCount(4);

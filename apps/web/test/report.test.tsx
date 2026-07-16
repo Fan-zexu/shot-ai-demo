@@ -5,6 +5,7 @@ import { afterEach, describe, expect, test } from 'vitest';
 import { ReportWorkspace } from '../src/pages/ReportPage.tsx';
 import { eventSampleIndices } from '../src/report/events.ts';
 import {
+  displayPositionAtElapsed,
   initialPlaybackState,
   needsVideoCorrection,
   playbackReducer,
@@ -26,6 +27,11 @@ describe('shared report playback', () => {
     expect(switched.sampleIndex).toBe(3);
     expect(switched.progress).toBe(3 / 5);
     expect(switched.playing).toBe(true);
+  });
+
+  test('the shared clock advances continuously from elapsed animation time', () => {
+    expect(displayPositionAtElapsed(2.5, 250, 30, 1)).toBe(10);
+    expect(displayPositionAtElapsed(2.5, 250, 30, 0.5)).toBe(6.25);
   });
 
   test('event jumps and renderer switches keep one root sample index', async () => {
@@ -72,6 +78,16 @@ describe('shared report playback', () => {
     expect(screen.queryByText(/自动降速/)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: '标准对齐速度' })).toHaveAttribute('aria-pressed', 'true');
   });
+});
+
+test('desktop debug distinguishes immutable analysis data from the presentation copy', async () => {
+  const user = userEvent.setup();
+  const { container } = render(<ReportWorkspace report={reportFixture()} />);
+
+  await user.click(container.querySelector('.debug-panel > summary')!);
+  expect(screen.getByText('播放质量诊断')).toBeInTheDocument();
+  expect(screen.getByText(/重复率来自不可变 DTW 对齐路径/)).toBeInTheDocument();
+  expect(screen.getByText('原始分析帧')).toBeInTheDocument();
 });
 
 describe('shared landmark presentation', () => {
