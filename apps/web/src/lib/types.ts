@@ -1,4 +1,4 @@
-import type { JobStatus, ShootingHand } from '@shot-ai/contracts';
+import type { JobStatus, JobSummary, ShootingHand } from '@shot-ai/contracts';
 
 export interface PublicApiError {
   code: string;
@@ -66,6 +66,22 @@ export interface CreateComparisonResponse {
   comparisonId: string;
   jobId: string;
   status: 'queued';
+}
+
+export interface ComparisonHistoryItem {
+  id: string;
+  status: JobStatus;
+  shootingHand: ShootingHand;
+  rejectionCode: string | null;
+  error: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+  template: {
+    id: string;
+    name: string;
+  };
+  userFileName: string;
+  job: JobSummary | null;
 }
 
 export interface DebugSummary {

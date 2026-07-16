@@ -77,6 +77,14 @@ export class ComparisonRepository {
     return comparison?.deletedAt === null ? comparison : null;
   }
 
+  listActive(): ComparisonRecord[] {
+    return (
+      this.database
+        .prepare('SELECT * FROM comparisons WHERE deleted_at IS NULL ORDER BY created_at DESC')
+        .all() as ComparisonRow[]
+    ).map(mapComparison);
+  }
+
   markRunning(id: string): ComparisonRecord {
     return this.updateStatus(id, { status: 'running' });
   }

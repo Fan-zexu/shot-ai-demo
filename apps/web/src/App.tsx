@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { AppShell } from './components/AppShell.tsx';
+import { HistoryPage } from './pages/HistoryPage.tsx';
 import { NewComparisonPage } from './pages/NewComparisonPage.tsx';
 import { ProcessingPage } from './pages/ProcessingPage.tsx';
 import { ReportPage } from './pages/ReportPage.tsx';
@@ -27,6 +28,7 @@ export function App() {
   }, []);
 
   if (route.pathname === '/' || route.pathname === '/templates') return <TemplatesPage />;
+  if (route.pathname === '/comparisons') return <HistoryPage />;
   if (route.pathname === '/comparisons/new') {
     const initialTemplateId = route.search.get('template');
     return <NewComparisonPage {...(initialTemplateId ? { initialTemplateId } : {})} />;

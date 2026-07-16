@@ -4,15 +4,17 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import type { JobSummary } from '@shot-ai/contracts';
 
+import { HistoryPage } from '../src/pages/HistoryPage.tsx';
 import { NewComparisonPage } from '../src/pages/NewComparisonPage.tsx';
 import { ProcessingPage } from '../src/pages/ProcessingPage.tsx';
 import { TemplatesPage } from '../src/pages/TemplatesPage.tsx';
-import type { TemplateDetails } from '../src/lib/types.ts';
+import type { ComparisonHistoryItem, TemplateDetails } from '../src/lib/types.ts';
 
 const api = vi.hoisted(() => ({
   listTemplates: vi.fn(),
   createComparison: vi.fn(),
   createTemplate: vi.fn(),
+  listComparisons: vi.fn(),
   getJob: vi.fn(),
   retryJob: vi.fn(),
 }));
@@ -24,6 +26,7 @@ vi.mock('../src/lib/api.ts', async (importOriginal) => {
     listTemplates: api.listTemplates,
     createComparison: api.createComparison,
     createTemplate: api.createTemplate,
+    listComparisons: api.listComparisons,
     getJob: api.getJob,
     retryJob: api.retryJob,
   };
@@ -129,6 +132,28 @@ describe('new comparison', () => {
   });
 });
 
+describe('comparison history', () => {
+  test('reopens saved reports and keeps unfinished tasks queryable', async () => {
+    const user = userEvent.setup();
+    api.listComparisons.mockResolvedValue([
+      comparisonFixture({ id: 'cmp_ready', status: 'ready', userFileName: '右手练习 01.mov' }),
+      comparisonFixture({ id: 'cmp_rejected', status: 'rejected', userFileName: '出框素材.mov' }),
+    ]);
+
+    render(<HistoryPage />);
+
+    expect(await screen.findByRole('heading', { name: '右手练习 01.mov' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '出框素材.mov' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '查看报告' })).toHaveAttribute('href', '#/reports/cmp_ready');
+    expect(screen.getByRole('link', { name: '查看任务详情' })).toHaveAttribute('href', '#/jobs/job_cmp_rejected');
+    expect(screen.getByRole('link', { name: '历史' })).toHaveClass('is-active');
+
+    await user.click(screen.getByRole('button', { name: '已完成' }));
+    expect(screen.getByRole('heading', { name: '右手练习 01.mov' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: '出框素材.mov' })).not.toBeInTheDocument();
+  });
+});
+
 describe('processing outcome', () => {
   test('a rejected input leads with retake guidance and never offers retry', async () => {
     api.getJob.mockResolvedValue(rejectedJob());
@@ -168,6 +193,38 @@ function templateFixture(
     },
     quality: null,
     job: null,
+  };
+}
+
+function comparisonFixture(
+  input: Pick<ComparisonHistoryItem, 'id' | 'status' | 'userFileName'>,
+): ComparisonHistoryItem {
+  const error = input.status === 'rejected'
+    ? { code: 'USER_BODY_OUT_OF_FRAME', message: 'Input did not pass analysis' }
+    : null;
+  return {
+    id: input.id,
+    status: input.status,
+    userFileName: input.userFileName,
+    shootingHand: 'right',
+    rejectionCode: error?.code ?? null,
+    error,
+    createdAt: '2026-07-16T10:00:00.000Z',
+    updatedAt: '2026-07-16T10:05:00.000Z',
+    template: { id: 'tpl_right', name: '右手标准 1' },
+    job: input.status === 'ready'
+      ? null
+      : {
+          id: `job_${input.id}`,
+          type: 'comparison',
+          entityId: input.id,
+          status: input.status,
+          stage: 'validating_user',
+          completedStages: [],
+          attempt: 1,
+          error,
+          updatedAt: '2026-07-16T10:05:00.000Z',
+        },
   };
 }
 

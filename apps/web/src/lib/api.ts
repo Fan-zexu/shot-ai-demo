@@ -3,6 +3,7 @@ import type { JobSummary, ReportBundle, ShootingHand } from '@shot-ai/contracts'
 import type {
   CreateComparisonResponse,
   CreateTemplateResponse,
+  ComparisonHistoryItem,
   DebugSummary,
   PublicApiError,
   TemplateDetails,
@@ -98,6 +99,10 @@ export function createComparison(input: {
     method: 'POST',
     body: videoForm(input),
   });
+}
+
+export function listComparisons() {
+  return request<ComparisonHistoryItem[]>('/comparisons');
 }
 
 export function getJob(jobId: string) {

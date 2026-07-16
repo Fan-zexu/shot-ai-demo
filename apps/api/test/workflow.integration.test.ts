@@ -139,6 +139,29 @@ test('a comparison produces one report bundle, aligned previews, and Range video
   assert.equal(resultExport.headers['content-type'], 'application/gzip');
 });
 
+test('comparison history exposes saved reports with their template, source, and task destination', async (context) => {
+  const { app } = await setup(context);
+  const template = await createReadyTemplate(app);
+  const response = await createComparison(app, template.templateId);
+  const created = response.json() as { comparisonId: string; jobId: string };
+  await app.jobRunner.drain();
+
+  const history = await app.inject({ method: 'GET', url: '/api/v1/comparisons' });
+  const items = history.json() as Array<Record<string, unknown>>;
+
+  assert.equal(history.statusCode, 200);
+  assert.equal(items.length, 1);
+  assert.equal(items[0]?.id, created.comparisonId);
+  assert.equal(items[0]?.status, 'ready');
+  assert.equal(items[0]?.shootingHand, 'right');
+  assert.equal(items[0]?.userFileName, 'shot.mp4');
+  assert.deepEqual(items[0]?.template, {
+    id: template.templateId,
+    name: '右手侧面模板',
+  });
+  assert.equal((items[0]?.job as { id: string }).id, created.jobId);
+});
+
 test('rejected input is not retryable', async (context) => {
   const { app, worker } = await setup(context);
   const template = await createReadyTemplate(app);
@@ -243,10 +266,12 @@ test('soft-deleting a comparison removes public report and video access', async 
     url: `/api/v1/comparisons/${created.comparisonId}/report`,
   });
   const hiddenVideo = await app.inject({ method: 'GET', url: videoUrl });
+  const history = await app.inject({ method: 'GET', url: '/api/v1/comparisons' });
 
   assert.equal(removed.statusCode, 204);
   assert.equal(hiddenReport.statusCode, 404);
   assert.equal(hiddenVideo.statusCode, 404);
+  assert.equal(history.json().some((item: { id: string }) => item.id === created.comparisonId), false);
 });
 
 test('unknown file signatures are rejected before a task is created', async (context) => {

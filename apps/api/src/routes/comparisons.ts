@@ -39,6 +39,27 @@ export async function registerComparisonRoutes(app: FastifyInstance) {
     return reply.status(202).send({ ...created, status: 'queued' });
   });
 
+  app.get('/api/v1/comparisons', async () => {
+    return app.services.comparisons.listActive().map((comparison) => {
+      const template = app.services.templates.get(comparison.templateId);
+      const source = app.services.files.getActive(comparison.userSourceFileId);
+      return {
+        id: comparison.id,
+        status: comparison.status,
+        shootingHand: comparison.shootingHand,
+        rejectionCode: comparison.rejectionCode,
+        error: comparison.error,
+        createdAt: comparison.createdAt,
+        updatedAt: comparison.updatedAt,
+        template: template
+          ? { id: template.id, name: template.name }
+          : { id: comparison.templateId, name: '已删除的参考模板' },
+        userFileName: source?.originalName ?? '未命名视频',
+        job: app.services.jobs.findLatestForEntity('comparison', comparison.id),
+      };
+    });
+  });
+
   app.get<{ Params: { comparisonId: string } }>(
     '/api/v1/comparisons/:comparisonId',
     async (request) => {

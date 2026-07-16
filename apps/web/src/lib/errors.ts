@@ -34,6 +34,10 @@ const ERROR_COPY: Record<string, ErrorCopy> = {
     title: '用户与模板缺少足够的共同可比较区域',
     action: '更换角度更规范的视频或模板',
   },
+  LOW_ALIGNMENT_CONFIDENCE: {
+    title: '用户动作与模板无法可靠对齐',
+    action: '更换拍摄角度和动作范围更接近的用户视频或模板',
+  },
   MULTIPLE_ACTIONS_DETECTED: {
     title: '视频中包含多次投篮',
     action: '只保留一次完整投篮后重新上传',

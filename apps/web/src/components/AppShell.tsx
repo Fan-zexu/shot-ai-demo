@@ -1,7 +1,7 @@
 import type { PropsWithChildren } from 'react';
 
 interface AppShellProps extends PropsWithChildren {
-  active: 'templates' | 'comparison' | 'job' | 'report';
+  active: 'templates' | 'history' | 'comparison' | 'job' | 'report';
 }
 
 export function AppShell({ active, children }: AppShellProps) {
@@ -27,6 +27,10 @@ export function AppShell({ active, children }: AppShellProps) {
           <NavIcon name="stack" />
           模板
         </a>
+        <a className={active === 'history' ? 'is-active' : ''} href="#/comparisons">
+          <NavIcon name="history" />
+          历史
+        </a>
         <a className={active === 'comparison' ? 'is-active' : ''} href="#/comparisons/new">
           <NavIcon name="compare" />
           新建对比
@@ -36,11 +40,18 @@ export function AppShell({ active, children }: AppShellProps) {
   );
 }
 
-function NavIcon({ name }: { name: 'stack' | 'compare' }) {
+function NavIcon({ name }: { name: 'stack' | 'history' | 'compare' }) {
   if (name === 'stack') {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="m4 8 8-4 8 4-8 4-8-4Zm0 4 8 4 8-4M4 16l8 4 8-4" />
+      </svg>
+    );
+  }
+  if (name === 'history') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M6 4h12v16H6zM9 8h6M9 12h6M9 16h4" />
       </svg>
     );
   }
