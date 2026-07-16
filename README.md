@@ -16,17 +16,11 @@
 
 ## 快速开始
 
-macOS 在仓库根目录执行：
+本机日常启动：
 
 ```bash
-brew install python@3.11 ffmpeg
-corepack enable
-pnpm install
-python3.11 -m venv .venv
-.venv/bin/pip install -r services/pose-worker/requirements.lock
-pnpm model:download
+cd /Users/zn/workspace/shotAI/MvpDemo
 pnpm dev
-pnpm verify
 ```
 
 `pnpm dev` 同时启动 Worker、API 和 H5，并在退出时清理三个进程：
@@ -34,6 +28,8 @@ pnpm verify
 - H5：`http://127.0.0.1:5173/#/templates`
 - API：`http://127.0.0.1:3001`
 - Pose Worker：`http://127.0.0.1:8001`
+
+在运行终端按 `Control + C` 即可停止整个项目；需要重启时，再执行一次 `pnpm dev`。首次安装、健康检查、端口占用和故障恢复见 [`docs/startup.md`](./docs/startup.md)。
 
 默认运行数据写入 `data/`，姿态模型写入 `models/`；两者都被 Git 忽略。需要自定义路径时复制 [`.env.example`](./.env.example) 的变量到当前 shell 或本机 `.env` 管理工具，API 与 Worker 必须指向同一个 `SHOT_AI_DATA_ROOT`。
 
@@ -58,7 +54,7 @@ services/pose-worker/        FastAPI、MediaPipe、OpenCV 和 FFmpeg 管线
 docs/                        开发与验证说明
 ```
 
-详细命令见 [`docs/development.md`](./docs/development.md)，工程证据与真实样本验收表见 [`docs/validation.md`](./docs/validation.md)。产品和算法边界以 Short AI 主工作区的 `docs/shot-comparison/prd.md` 与 `docs/shot-comparison/technical-design.md` 为实现来源；本仓库保留了对应的 [MVP 设计快照](./docs/superpowers/specs/2026-07-15-shot-comparison-mvp-design.md) 和历史实现清单，便于独立审阅。
+日常启动与重启见 [`docs/startup.md`](./docs/startup.md)，开发命令见 [`docs/development.md`](./docs/development.md)，工程证据与真实样本验收表见 [`docs/validation.md`](./docs/validation.md)。产品和算法边界以 Short AI 主工作区的 `docs/shot-comparison/prd.md` 与 `docs/shot-comparison/technical-design.md` 为实现来源；本仓库保留了对应的 [MVP 设计快照](./docs/superpowers/specs/2026-07-15-shot-comparison-mvp-design.md) 和历史实现清单，便于独立审阅。
 
 ## 验证
 
