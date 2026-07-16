@@ -44,17 +44,19 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-function templateForm(input: {
+function videoForm(input: {
   file: File;
   shootingHand: ShootingHand;
-  normalSpeedConfirmed: true;
+  normalSpeedConfirmed?: true;
   name?: string;
   templateId?: string;
 }) {
   const form = new FormData();
   form.set('file', input.file);
   form.set('shootingHand', input.shootingHand);
-  form.set('normalSpeedConfirmed', String(input.normalSpeedConfirmed));
+  if (input.normalSpeedConfirmed) {
+    form.set('normalSpeedConfirmed', 'true');
+  }
   if (input.name) form.set('name', input.name);
   if (input.templateId) form.set('templateId', input.templateId);
   return form;
@@ -80,7 +82,7 @@ export function createTemplate(input: {
 }) {
   return request<CreateTemplateResponse>('/templates', {
     method: 'POST',
-    body: templateForm({ ...input, normalSpeedConfirmed: true }),
+    body: videoForm(input),
   });
 }
 
@@ -98,7 +100,7 @@ export function createComparison(input: {
 }) {
   return request<CreateComparisonResponse>('/comparisons', {
     method: 'POST',
-    body: templateForm({ ...input, normalSpeedConfirmed: true }),
+    body: videoForm({ ...input, normalSpeedConfirmed: true }),
   });
 }
 

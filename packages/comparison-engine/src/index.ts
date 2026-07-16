@@ -39,7 +39,21 @@ function resultId() {
 
 export function compareMotions(input: CompareInput): ComparisonOutput {
   const started = performance.now();
-  const thresholds = resolveThresholds(input.thresholds);
+  const resolvedThresholds = resolveThresholds(input.thresholds);
+  const timingComparable =
+    input.template.capture.normalSpeedConfirmed &&
+    input.user.capture.normalSpeedConfirmed;
+  const thresholds = timingComparable
+    ? resolvedThresholds
+    : {
+        ...resolvedThresholds,
+        // A slowed or speed-ramped template keeps pose geometry, but its
+        // timestamp-derived velocity is not the shooter's real velocity.
+        featureWeights: {
+          ...resolvedThresholds.featureWeights,
+          velocity: 0,
+        },
+      };
   const compatibility = checkCompatibility(input.template, input.user);
   const retargeted = retargetPair(input.template, input.user);
   const phases = splitPhases(retargeted.template, retargeted.user);

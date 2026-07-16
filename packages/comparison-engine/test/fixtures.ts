@@ -19,6 +19,7 @@ interface ArtifactOptions {
   shootingAngleOffset?: number;
   comparableRegions?: BodyRegion[];
   confidenceByRegion?: Partial<Record<BodyRegion, number>>;
+  normalSpeedConfirmed?: boolean;
 }
 
 function motionEvent<Name extends MotionEventName, Proxy extends boolean>(
@@ -118,7 +119,7 @@ export function makeArtifact(options: ArtifactOptions): MotionArtifact {
       shootingHand: options.shootingHand ?? 'right',
       detectedView: options.view ?? 'shooting_side',
       facingDirection: 'right',
-      normalSpeedConfirmed: true,
+      normalSpeedConfirmed: options.normalSpeedConfirmed ?? true,
     },
     quality: {
       checks: [],

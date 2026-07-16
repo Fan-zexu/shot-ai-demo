@@ -609,6 +609,25 @@ input::placeholder {
   font-size: 0.82rem;
 }
 
+.template-speed-note {
+  display: grid;
+  padding: 12px 14px;
+  gap: 4px;
+  border-left: 2px solid var(--template);
+  background: rgba(105, 180, 255, 0.05);
+}
+
+.template-speed-note strong {
+  color: var(--chalk);
+  font-size: 0.82rem;
+}
+
+.template-speed-note span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
 .field-error,
 .form-request-error {
   margin: 0;
@@ -1320,6 +1339,7 @@ input::placeholder {
   .upload-panel form { grid-template-columns: 1fr 1fr; }
   .upload-panel form > .field:nth-of-type(2),
   .upload-panel form > .check-row,
+  .upload-panel form > .template-speed-note,
   .upload-panel form > .field-error,
   .upload-panel form > .form-request-error,
   .upload-panel form > .form-actions { grid-column: 1 / -1; }

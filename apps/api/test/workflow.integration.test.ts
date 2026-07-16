@@ -28,12 +28,11 @@ async function setup(context: test.TestContext) {
 }
 
 test('template upload becomes ready only after a valid persisted artifact', async (context) => {
-  const { app } = await setup(context);
+  const { app, worker } = await setup(context);
   const response = await app.inject(
     multipartRequest('/api/v1/templates', {
       name: '右手侧面模板',
       shootingHand: 'right',
-      normalSpeedConfirmed: 'true',
     }),
   );
 
@@ -54,6 +53,7 @@ test('template upload becomes ready only after a valid persisted artifact', asyn
   assert.equal(job.json().entityId, created.templateId);
   assert.ok(job.json().completedStages.includes('writing_artifact'));
   assert.match(template.json().currentArtifactId, /^artifact_/);
+  assert.equal(worker.analyzeRequests[0]?.normalSpeedConfirmed, false);
 });
 
 test('same-hand mismatch is rejected before a comparison job is created', async (context) => {
@@ -67,7 +67,7 @@ test('same-hand mismatch is rejected before a comparison job is created', async 
 });
 
 test('a comparison produces one report bundle, aligned previews, and Range video', async (context) => {
-  const { app } = await setup(context);
+  const { app, worker } = await setup(context);
   const template = await createReadyTemplate(app);
   const response = await createComparison(app, template.templateId);
   assert.equal(response.statusCode, 202);
@@ -127,6 +127,11 @@ test('a comparison produces one report bundle, aligned previews, and Range video
     url: `/api/v1/debug/results/${comparison.json().resultId}`,
   });
   assert.equal(debugQuality.json().status, 'accepted');
+  assert.equal(report.json().comparison.provenance.thresholdSnapshot.velocityWeight, 0);
+  assert.equal(
+    worker.analyzeRequests.find((request) => request.sourceType === 'user')?.normalSpeedConfirmed,
+    true,
+  );
   assert.equal(debugSummary.json().resultEvidence.compatibility.shootingHand, 'right');
   assert.equal(typeof debugSummary.json().templateArtifactEvidence.events.prep_start.confidence, 'number');
   assert.equal(typeof debugSummary.json().artifactEvidence.events.prep_start.confidence, 'number');

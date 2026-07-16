@@ -11,7 +11,7 @@ export interface AnalyzeMotionRequest {
   sourceFileId: string;
   sourceSha256: string;
   shootingHand: ShootingHand;
-  normalSpeedConfirmed: true;
+  normalSpeedConfirmed: boolean;
   thresholds: Record<string, number | string | boolean>;
   outputPath: string;
 }

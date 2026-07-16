@@ -154,16 +154,29 @@ def evaluate_quality(
     if not fps_ok:
         rejection_codes.append("ABNORMAL_VIDEO_TIMING")
 
+    speed_required = source_type == "user"
     checks.append(
         QualityCheck(
             code="NORMAL_SPEED_CONFIRMED",
-            status="pass" if normal_speed_confirmed else "fail",
+            status=(
+                "pass"
+                if normal_speed_confirmed
+                else "fail"
+                if speed_required
+                else "warning"
+            ),
             measured_value=normal_speed_confirmed,
-            threshold=True,
-            message="已确认正常速度" if normal_speed_confirmed else "未确认视频为正常速度",
+            threshold=True if speed_required else "not_required_for_template",
+            message=(
+                "已确认正常速度"
+                if normal_speed_confirmed
+                else "用户视频未确认为正常速度"
+                if speed_required
+                else "参考模板允许慢放或剪辑变速，真实速度与节奏不参与比较"
+            ),
         )
     )
-    if not normal_speed_confirmed:
+    if speed_required and not normal_speed_confirmed:
         rejection_codes.append("ABNORMAL_VIDEO_TIMING")
 
     required_coverage, required_evidence = _coverage(frames, REQUIRED_NAMES)

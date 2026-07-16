@@ -20,7 +20,7 @@ pnpm api:dev
 
 ## 公开接口
 
-- `POST /api/v1/templates`：上传并异步解析模板。
+- `POST /api/v1/templates`：上传并异步解析模板；模板不要求正常速度确认，慢放或剪辑变速不会作为输入拒绝原因。
 - `GET /api/v1/templates`、`GET /api/v1/templates/:id`、`DELETE /api/v1/templates/:id`。
 - `POST /api/v1/comparisons`：上传用户视频并创建对比。
 - `GET /api/v1/comparisons/:id`、`GET /api/v1/comparisons/:id/report`。

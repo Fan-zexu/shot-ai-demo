@@ -27,7 +27,6 @@ interface FormErrors {
   name?: string;
   file?: string;
   hand?: string;
-  confirmation?: string;
 }
 
 export function TemplatesPage() {
@@ -91,7 +90,7 @@ export function TemplatesPage() {
 
       {!loading && !loadError && templates.length === 0 ? (
         <EmptyState title="还没有动作模板">
-          上传一段正常速度、完整侧面的投篮视频，系统会先验证它是否适合作为参考。
+          上传一段完整侧面的投篮视频。参考模板允许慢放或剪辑变速，系统只使用姿态与动作阶段。
         </EmptyState>
       ) : null}
 
@@ -124,7 +123,6 @@ function TemplateUploadPanel({
   const [name, setName] = useState('');
   const [hand, setHand] = useState<ShootingHand | ''>('');
   const [file, setFile] = useState<File | null>(null);
-  const [confirmed, setConfirmed] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [requestError, setRequestError] = useState<PublicApiError | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -136,7 +134,6 @@ function TemplateUploadPanel({
     if (!hand) nextErrors.hand = '请选择投篮手';
     if (!file) nextErrors.file = '请选择一个本地视频';
     else if (file.size > MAX_UPLOAD_BYTES) nextErrors.file = '文件超过 300 MB，请压缩后重试';
-    if (!confirmed) nextErrors.confirmation = '请确认视频是正常速度且未变速';
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0 || !file || !hand) return;
 
@@ -176,18 +173,10 @@ function TemplateUploadPanel({
         <HandSelector value={hand} onChange={setHand} />
         {errors.hand ? <p className="field-error" role="alert">{errors.hand}</p> : null}
         <FilePicker file={file} onChange={setFile} error={errors.file} />
-        <label className={`check-row ${errors.confirmation ? 'has-error' : ''}`}>
-          <input
-            type="checkbox"
-            checked={confirmed}
-            onChange={(event) => setConfirmed(event.target.checked)}
-          />
-          <span>
-            <strong>我确认该视频为正常速度</strong>
-            <small>没有加速、慢放或剪辑变速</small>
-          </span>
-        </label>
-        {errors.confirmation ? <p className="field-error" role="alert">{errors.confirmation}</p> : null}
+        <div className="template-speed-note" role="note">
+          <strong>允许慢放或剪辑变速</strong>
+          <span>模板只用于姿态和动作阶段参考，不比较真实速度与节奏。</span>
+        </div>
         {requestError ? (
           <p className="form-request-error" role="alert">{requestError.message} · {requestError.code}</p>
         ) : null}

@@ -6,11 +6,13 @@ import type { JobSummary } from '@shot-ai/contracts';
 
 import { NewComparisonPage } from '../src/pages/NewComparisonPage.tsx';
 import { ProcessingPage } from '../src/pages/ProcessingPage.tsx';
+import { TemplatesPage } from '../src/pages/TemplatesPage.tsx';
 import type { TemplateDetails } from '../src/lib/types.ts';
 
 const api = vi.hoisted(() => ({
   listTemplates: vi.fn(),
   createComparison: vi.fn(),
+  createTemplate: vi.fn(),
   getJob: vi.fn(),
   retryJob: vi.fn(),
 }));
@@ -21,6 +23,7 @@ vi.mock('../src/lib/api.ts', async (importOriginal) => {
     ...original,
     listTemplates: api.listTemplates,
     createComparison: api.createComparison,
+    createTemplate: api.createTemplate,
     getJob: api.getJob,
     retryJob: api.retryJob,
   };
@@ -29,6 +32,38 @@ vi.mock('../src/lib/api.ts', async (importOriginal) => {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+});
+
+describe('template upload', () => {
+  test('allows an altered-speed reference without a confirmation checkbox', async () => {
+    const user = userEvent.setup();
+    api.listTemplates.mockResolvedValue([]);
+    api.createTemplate.mockResolvedValue({
+      templateId: 'tpl_slow_motion',
+      jobId: 'job_slow_motion',
+      status: 'queued',
+    });
+    render(<TemplatesPage />);
+
+    await screen.findByRole('heading', { name: '还没有动作模板' });
+    await user.click(screen.getByRole('button', { name: '上传模板' }));
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(screen.getByText('允许慢放或剪辑变速')).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('模板名称'), '慢速右手模板');
+    await user.click(screen.getByRole('radio', { name: '右手' }));
+    await user.upload(
+      screen.getByLabelText('本地视频'),
+      new File(['video'], 'slow-shot.mov', { type: 'video/quicktime' }),
+    );
+    await user.click(screen.getByRole('button', { name: '上传并开始解析' }));
+
+    expect(api.createTemplate).toHaveBeenCalledWith({
+      file: expect.any(File),
+      name: '慢速右手模板',
+      shootingHand: 'right',
+    });
+  });
 });
 
 describe('new comparison', () => {

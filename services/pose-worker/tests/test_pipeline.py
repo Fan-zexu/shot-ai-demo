@@ -2,6 +2,8 @@ import gzip
 import json
 from pathlib import Path
 
+import pytest
+
 from app.models import AnalyzeMotionRequest
 from app.pipeline import analyze_motion
 from tests.fixtures import create_video, make_shot_frames
@@ -41,3 +43,37 @@ def test_pipeline_writes_an_accepted_traceable_artifact(tmp_path: Path):
     assert artifact["events"]["release_pose_proxy"]["isProxy"] is True
     assert len(artifact["frames"]) == 90
     assert artifact["provenance"]["modelSha256"] == "f" * 64
+
+
+def test_pipeline_does_not_reject_repeated_frames_for_an_altered_speed_template(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    video = create_video(tmp_path / "data" / "uploads" / "template.mp4", frames=90, size="720x720")
+    output = tmp_path / "data" / "artifacts" / "template-motion.json.gz"
+
+    def reject_if_called(_path: str):
+        raise AssertionError("altered-speed templates must not run the repeated-frame gate")
+
+    monkeypatch.setattr("app.pipeline.inspect_repeated_frames", reject_if_called)
+    response = analyze_motion(
+        AnalyzeMotionRequest(
+            request_id="job_template",
+            source_type="template",
+            file_path=str(video),
+            source_file_id="file_template",
+            source_sha256="b" * 64,
+            shooting_hand="right",
+            normal_speed_confirmed=False,
+            output_path=str(output),
+        ),
+        FakePoseBackend(),
+    )
+
+    assert response.status == "accepted", response.model_dump()
+    with gzip.open(output, "rt", encoding="utf8") as handle:
+        artifact = json.load(handle)
+    assert artifact["capture"]["normalSpeedConfirmed"] is False
+    speed_check = next(
+        check for check in artifact["quality"]["checks"] if check["code"] == "NORMAL_SPEED_CONFIRMED"
+    )
+    assert speed_check["status"] == "warning"

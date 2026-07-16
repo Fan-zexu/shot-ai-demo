@@ -68,7 +68,8 @@ def analyze_motion(
     metadata = probe_video(request.file_path)
     probe_finished = time.perf_counter()
     timing_codes = inspect_timestamps(probe_timestamps(request.file_path))
-    timing_codes.extend(inspect_repeated_frames(request.file_path))
+    if request.source_type == "user":
+        timing_codes.extend(inspect_repeated_frames(request.file_path))
     frames = backend.analyze_video(request.file_path, metadata)
     pose_finished = time.perf_counter()
     defaults = USER_THRESHOLDS if request.source_type == "user" else TEMPLATE_THRESHOLDS

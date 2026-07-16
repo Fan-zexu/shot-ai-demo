@@ -50,6 +50,24 @@ test('five phase-local alignments produce one schema-valid common render timelin
   });
 });
 
+test('an altered-speed template removes timestamp velocity from alignment', () => {
+  const template = makeArtifact({
+    sourceType: 'template',
+    normalSpeedConfirmed: false,
+  });
+  const user = makeArtifact({ sourceType: 'user' });
+
+  const result = compareMotions({
+    comparisonId: 'cmp_altered_speed_template',
+    template,
+    user,
+    templatePreviewFileId: 'file_template_preview',
+    userPreviewFileId: 'file_user_preview',
+  });
+
+  assert.equal(result.provenance.thresholdSnapshot.velocityWeight, 0);
+});
+
 test('all modes can trace a highlighted region to numeric difference and confidence evidence', () => {
   const template = makeArtifact({ sourceType: 'template' });
   const user = makeArtifact({ sourceType: 'user', shootingAngleOffset: 18 });

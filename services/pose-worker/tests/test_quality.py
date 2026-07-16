@@ -1,6 +1,10 @@
 from app.models import VideoMetadata
 from app.quality.evaluate import evaluate_quality
-from app.quality.thresholds import USER_THRESHOLDS, apply_threshold_overrides
+from app.quality.thresholds import (
+    TEMPLATE_THRESHOLDS,
+    USER_THRESHOLDS,
+    apply_threshold_overrides,
+)
 from tests.fixtures import make_frames
 
 
@@ -47,6 +51,23 @@ def test_user_quality_rejects_unconfirmed_normal_speed():
 
     assert report.status == "rejected"
     assert "ABNORMAL_VIDEO_TIMING" in report.rejection_codes
+
+
+def test_template_quality_allows_unconfirmed_playback_speed_with_a_warning():
+    report = evaluate_quality(
+        metadata=user_metadata(),
+        frames=make_frames(),
+        source_type="template",
+        shooting_hand="right",
+        normal_speed_confirmed=False,
+        timing_rejection_codes=[],
+        thresholds=TEMPLATE_THRESHOLDS,
+    )
+
+    speed_check = next(item for item in report.checks if item.code == "NORMAL_SPEED_CONFIRMED")
+    assert report.status == "accepted"
+    assert speed_check.status == "warning"
+    assert "ABNORMAL_VIDEO_TIMING" not in report.rejection_codes
 
 
 def test_user_quality_rejects_an_eleven_frame_landmark_gap_even_when_total_coverage_passes():

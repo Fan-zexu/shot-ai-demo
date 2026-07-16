@@ -238,7 +238,10 @@ export class JobRunner {
         sourceFileId: source.id,
         sourceSha256: source.sha256,
         shootingHand,
-        normalSpeedConfirmed: true,
+        // Reference material often contains instructional slow motion. Mark it
+        // as timing-untrusted so downstream alignment cannot treat playback
+        // speed as the shooter's real movement speed.
+        normalSpeedConfirmed: sourceType === 'user',
         thresholds: {},
         outputPath,
       });

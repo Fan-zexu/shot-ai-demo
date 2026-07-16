@@ -28,6 +28,7 @@ export class FakeWorkerClient implements WorkerClient {
   failUserAttempts = 0;
   failPreviewAttempts = 0;
   userAnalyzeCalls = 0;
+  analyzeRequests: AnalyzeMotionRequest[] = [];
 
   async health(): Promise<WorkerHealth> {
     return {
@@ -39,6 +40,7 @@ export class FakeWorkerClient implements WorkerClient {
   }
 
   async analyzeMotion(request: AnalyzeMotionRequest): Promise<AnalyzeMotionResponse> {
+    this.analyzeRequests.push(request);
     if (request.sourceType === 'user') this.userAnalyzeCalls += 1;
     if (request.sourceType === 'user' && this.failUserAttempts > 0) {
       this.failUserAttempts -= 1;
@@ -67,6 +69,7 @@ export class FakeWorkerClient implements WorkerClient {
     artifact.sourceSha256 = request.sourceSha256;
     artifact.createdAt = new Date().toISOString();
     artifact.capture.shootingHand = request.shootingHand;
+    artifact.capture.normalSpeedConfirmed = request.normalSpeedConfirmed;
     artifact.quality.comparableRegions = [...allRegions];
     artifact.quality.rejectedRegions = {};
     await mkdir(dirname(request.outputPath), { recursive: true });

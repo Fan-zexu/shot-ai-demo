@@ -5,7 +5,6 @@ import {
   parseVideoUpload,
   registerSourceUpload,
   requireField,
-  requireNormalSpeed,
   requireShootingHand,
 } from '../http/upload.ts';
 
@@ -15,7 +14,6 @@ export async function registerTemplateRoutes(app: FastifyInstance) {
     const name = requireField(upload.fields, 'name');
     if (name.length > 80) throw appError('INVALID_FORM', 'Template name must be at most 80 characters');
     const shootingHand = requireShootingHand(upload.fields);
-    requireNormalSpeed(upload.fields);
     let created!: { templateId: string; jobId: string };
     app.services.database.transaction(() => {
       const source = registerSourceUpload(request, upload);
