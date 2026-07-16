@@ -1582,6 +1582,26 @@ input::placeholder {
   font-size: 0.78rem;
 }
 
+.capture-compatibility {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  padding: 12px 14px;
+  gap: 10px 18px;
+  border: 1px solid var(--line-strong);
+  border-bottom: 0;
+  background: var(--ink-950);
+}
+
+.capture-compatibility > div { display: grid; gap: 3px; }
+.capture-compatibility span { color: var(--muted); font-family: var(--mono); font-size: 0.56rem; letter-spacing: 0.08em; }
+.capture-compatibility strong { color: var(--success); font-size: 0.78rem; }
+.capture-compatibility p,
+.capture-compatibility small { margin: 0; color: var(--muted); font-size: 0.65rem; line-height: 1.5; }
+.capture-compatibility small { color: var(--muted-dark); }
+.capture-compatibility.compatibility-reference_only strong { color: var(--focus); }
+.capture-compatibility.compatibility-side_by_side_only strong { color: var(--evidence); }
+
 .mode-switcher {
   position: sticky;
   top: 0;
@@ -1614,6 +1634,8 @@ input::placeholder {
 .mode-switcher button span { color: var(--muted-dark); font-family: var(--mono); font-size: 0.58rem; }
 .mode-switcher button.is-active { color: var(--chalk); background: var(--ink-800); }
 .mode-switcher button.is-active span { color: var(--user); }
+.mode-switcher button small { color: var(--focus); font-size: 0.52rem; font-weight: 700; }
+.mode-switcher button:disabled { cursor: not-allowed; opacity: 0.42; }
 
 .renderer,
 .playback-console,
@@ -2290,6 +2312,7 @@ input::placeholder {
 }
 
 @media (min-width: 820px) {
+  .capture-compatibility { grid-template-columns: minmax(190px, 0.8fr) minmax(240px, 1.6fr) minmax(210px, 1fr); }
   .channel-layout { grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr); }
   .region-tracks { border-top: 0; border-left: 1px solid var(--line); }
   .evidence-heading { grid-template-columns: 1fr auto; align-items: end; }

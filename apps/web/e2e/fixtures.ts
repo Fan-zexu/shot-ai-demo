@@ -1,11 +1,12 @@
 import type { Page } from '@playwright/test';
 
-import { MotionEventNames } from '@shot-ai/contracts';
+import { MotionEventNames, type PresentationCompatibility } from '@shot-ai/contracts';
 
 import { reportFixture } from '../test/report-fixture.ts';
 
-export async function openReadyReport(page: Page) {
+export async function openReadyReport(page: Page, compatibility?: PresentationCompatibility) {
   const report = e2eReportFixture();
+  if (compatibility) report.presentationCompatibility = compatibility;
   await page.route('**/api/v1/comparisons/*/report', (route) => route.fulfill({ json: report }));
   await page.route('**/api/v1/files/*/video', (route) => route.fulfill({ status: 204 }));
   await page.route('**/api/v1/debug/comparisons/*/summary', (route) => route.fulfill({

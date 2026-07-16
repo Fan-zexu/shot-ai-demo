@@ -154,6 +154,46 @@ test('overlay never draws ambiguous cross-skeleton difference links', async () =
   expect(container.querySelectorAll('.difference-link')).toHaveLength(0);
 });
 
+describe('capture compatibility degradation', () => {
+  test('camera instability keeps precision-looking modes available but labels them reference-only', () => {
+    const report = reportFixture();
+    report.presentationCompatibility = {
+      level: 'reference_only',
+      reasons: ['template_camera_unstable'],
+      modes: {
+        sideBySide: 'enabled',
+        skeletonOverlay: 'reference_only',
+        motionChannel: 'reference_only',
+      },
+    };
+    render(<ReportWorkspace report={report} />);
+
+    expect(screen.getByText('对比适配度：仅供参考')).toBeInTheDocument();
+    expect(screen.getByText(/参考视频存在相机移动/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /骨架叠加.*仅供参考/ })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /动作通道.*仅供参考/ })).toBeEnabled();
+  });
+
+  test('wrong view disables overlay and channel while preserving side-by-side', () => {
+    const report = reportFixture();
+    report.presentationCompatibility = {
+      level: 'side_by_side_only',
+      reasons: ['user_view_mismatch', 'user_body_out_of_frame'],
+      modes: {
+        sideBySide: 'enabled',
+        skeletonOverlay: 'disabled',
+        motionChannel: 'disabled',
+      },
+    };
+    render(<ReportWorkspace report={report} />);
+
+    expect(screen.getByText('对比适配度：仅并排可用')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /并排视频/ })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /骨架叠加.*已关闭/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /动作通道.*已关闭/ })).toBeDisabled();
+  });
+});
+
 test('event anchors map to the six shared timeline samples', () => {
   expect(eventSampleIndices(reportFixture().comparison)).toEqual({
     prep_start: 0,

@@ -1,6 +1,11 @@
 import type { Dispatch } from 'react';
 
-import type { ComparisonResult, MotionEventName, PlaybackMode } from '@shot-ai/contracts';
+import type {
+  ComparisonResult,
+  MotionEventName,
+  PlaybackMode,
+  PresentationCompatibility,
+} from '@shot-ai/contracts';
 
 import { eventSampleIndices, phaseLabel, REPORT_EVENTS } from './events.ts';
 import {
@@ -17,22 +22,60 @@ const MODE_OPTIONS: Array<{ mode: PlaybackMode; label: string; index: string }> 
   { mode: 'motion_channel', label: '动作通道', index: '03' },
 ];
 
-export function ModeSwitcher({ state, dispatch }: { state: PlaybackState; dispatch: Dispatch<PlaybackAction> }) {
+export function ModeSwitcher({
+  state,
+  dispatch,
+  compatibility,
+}: {
+  state: PlaybackState;
+  dispatch: Dispatch<PlaybackAction>;
+  compatibility: PresentationCompatibility;
+}) {
   return (
     <div className="mode-switcher" role="group" aria-label="报告呈现模式">
       {MODE_OPTIONS.map((option) => (
-        <button
+        <ModeButton
           key={option.mode}
-          type="button"
-          aria-pressed={state.mode === option.mode}
-          className={state.mode === option.mode ? 'is-active' : ''}
-          onClick={() => dispatch({ type: 'set_mode', mode: option.mode })}
-        >
-          <span>{option.index}</span>{option.label}
-        </button>
+          option={option}
+          state={state}
+          dispatch={dispatch}
+          availability={modeAvailability(compatibility, option.mode)}
+        />
       ))}
     </div>
   );
+}
+
+function ModeButton({
+  option,
+  state,
+  dispatch,
+  availability,
+}: {
+  option: (typeof MODE_OPTIONS)[number];
+  state: PlaybackState;
+  dispatch: Dispatch<PlaybackAction>;
+  availability: 'enabled' | 'reference_only' | 'disabled';
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={state.mode === option.mode}
+      className={state.mode === option.mode ? 'is-active' : ''}
+      disabled={availability === 'disabled'}
+      onClick={() => dispatch({ type: 'set_mode', mode: option.mode })}
+    >
+      <span>{option.index}</span>{option.label}
+      {availability === 'reference_only' ? <small>仅供参考</small> : null}
+      {availability === 'disabled' ? <small>已关闭</small> : null}
+    </button>
+  );
+}
+
+function modeAvailability(compatibility: PresentationCompatibility, mode: PlaybackMode) {
+  if (mode === 'side_by_side') return compatibility.modes.sideBySide;
+  if (mode === 'skeleton_overlay') return compatibility.modes.skeletonOverlay;
+  return compatibility.modes.motionChannel;
 }
 
 export function PlaybackControls({

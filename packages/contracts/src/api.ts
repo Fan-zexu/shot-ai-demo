@@ -32,6 +32,43 @@ export const ReportFrameSchema = Type.Object(
   closed,
 );
 
+export const PresentationCompatibilitySchema = Type.Object(
+  {
+    level: Type.Union([
+      Type.Literal('reliable'),
+      Type.Literal('reference_only'),
+      Type.Literal('side_by_side_only'),
+    ]),
+    reasons: Type.Array(Type.Union([
+      Type.Literal('template_camera_unstable'),
+      Type.Literal('user_camera_unstable'),
+      Type.Literal('template_view_mismatch'),
+      Type.Literal('user_view_mismatch'),
+      Type.Literal('template_body_out_of_frame'),
+      Type.Literal('user_body_out_of_frame'),
+      Type.Literal('template_pose_unstable'),
+      Type.Literal('user_pose_unstable'),
+    ]), { uniqueItems: true }),
+    modes: Type.Object(
+      {
+        sideBySide: Type.Literal('enabled'),
+        skeletonOverlay: Type.Union([
+          Type.Literal('enabled'),
+          Type.Literal('reference_only'),
+          Type.Literal('disabled'),
+        ]),
+        motionChannel: Type.Union([
+          Type.Literal('enabled'),
+          Type.Literal('reference_only'),
+          Type.Literal('disabled'),
+        ]),
+      },
+      closed,
+    ),
+  },
+  closed,
+);
+
 export const ReportBundleSchema = Type.Object(
   {
     comparison: ComparisonResultSchema,
@@ -49,6 +86,7 @@ export const ReportBundleSchema = Type.Object(
       },
       closed,
     ),
+    presentationCompatibility: PresentationCompatibilitySchema,
     renderFrames: Type.Array(ReportFrameSchema, { minItems: 1 }),
   },
   closed,
@@ -56,4 +94,5 @@ export const ReportBundleSchema = Type.Object(
 
 export type JobSummary = Static<typeof JobSummarySchema>;
 export type ReportFrame = Static<typeof ReportFrameSchema>;
+export type PresentationCompatibility = Static<typeof PresentationCompatibilitySchema>;
 export type ReportBundle = Static<typeof ReportBundleSchema>;

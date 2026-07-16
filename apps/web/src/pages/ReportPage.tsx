@@ -5,6 +5,7 @@ import type { ReportBundle } from '@shot-ai/contracts';
 import { AppShell } from '../components/AppShell.tsx';
 import { getReport, toApiError } from '../lib/api.ts';
 import type { PublicApiError } from '../lib/types.ts';
+import { CaptureCompatibilityNotice } from '../report/CaptureCompatibilityNotice.tsx';
 import { DebugPanel } from '../report/DebugPanel.tsx';
 import { fitReportToView } from '../report/fit-to-view.ts';
 import { ModeSwitcher, PlaybackControls } from '../report/PlaybackControls.tsx';
@@ -99,7 +100,12 @@ export function ReportWorkspace({ report }: { report: ReportBundle }) {
           </dl>
         </header>
 
-        <ModeSwitcher state={state} dispatch={dispatch} />
+        <CaptureCompatibilityNotice compatibility={report.presentationCompatibility} />
+        <ModeSwitcher
+          state={state}
+          dispatch={dispatch}
+          compatibility={report.presentationCompatibility}
+        />
 
         {state.mode === 'side_by_side' ? (
           <SideBySideRenderer

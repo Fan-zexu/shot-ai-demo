@@ -135,6 +135,11 @@ export function reportFixture(): ReportBundle {
       previewVideoUrl: '/api/v1/files/file_template_preview/video',
     },
     user: { previewVideoUrl: '/api/v1/files/file_user_preview/video' },
+    presentationCompatibility: {
+      level: 'reliable',
+      reasons: [],
+      modes: { sideBySide: 'enabled', skeletonOverlay: 'enabled', motionChannel: 'enabled' },
+    },
     renderFrames: renderTimeline.map((timelineSample) => ({
       sampleIndex: timelineSample.sampleIndex,
       templateVideoSkeleton: basePose.map((point) => ({

@@ -10,6 +10,7 @@ import { retargetPair } from '@shot-ai/comparison-engine';
 import { assertSchema, readGzipArtifact } from '../artifacts/io.ts';
 import { appError } from '../http/errors.ts';
 import type { AppServices } from '../services.ts';
+import { assessPresentationCompatibility } from './presentation-compatibility.ts';
 
 async function loadArtifact(services: AppServices, id: string): Promise<MotionArtifact> {
   const record = services.artifacts.get(id);
@@ -40,10 +41,9 @@ export async function buildReportBundle(
     services.fileStore.resolvePath(resultFile.relativePath),
     ComparisonResultSchema,
   );
-  const pair = retargetPair(
-    await loadArtifact(services, comparison.templateArtifactId),
-    await loadArtifact(services, comparison.userArtifactId),
-  );
+  const templateArtifact = await loadArtifact(services, comparison.templateArtifactId);
+  const userArtifact = await loadArtifact(services, comparison.userArtifactId);
+  const pair = retargetPair(templateArtifact, userArtifact);
   const templateFrames = new Map(pair.template.frames.map((frame) => [frame.frameIndex, frame]));
   const userFrames = new Map(pair.user.frames.map((frame) => [frame.frameIndex, frame]));
   const bundle: ReportBundle = {
@@ -56,6 +56,7 @@ export async function buildReportBundle(
     user: {
       previewVideoUrl: `/api/v1/files/${result.previews.userVideoFileId}/video`,
     },
+    presentationCompatibility: assessPresentationCompatibility(templateArtifact, userArtifact),
     renderFrames: result.renderTimeline.map((sample) => {
       const templateFrame = templateFrames.get(sample.templateFrameIndex);
       const userFrame = userFrames.get(sample.userFrameIndex);

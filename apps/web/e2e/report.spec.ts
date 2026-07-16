@@ -74,6 +74,19 @@ test('overlay and channel keep one action-wide fit across the complete timeline'
   expect(Math.max(...points.map((point) => point.y + point.radius))).toBeLessThanOrEqual(400);
 });
 
+test('capture incompatibility preserves side-by-side and disables precision-looking modes', async ({ page }) => {
+  await openReadyReport(page, {
+    level: 'side_by_side_only',
+    reasons: ['user_view_mismatch', 'user_body_out_of_frame'],
+    modes: { sideBySide: 'enabled', skeletonOverlay: 'disabled', motionChannel: 'disabled' },
+  });
+
+  await expect(page.getByText('对比适配度：仅并排可用')).toBeVisible();
+  await expect(page.getByRole('button', { name: /并排视频/ })).toBeEnabled();
+  await expect(page.getByRole('button', { name: /骨架叠加.*已关闭/ })).toBeDisabled();
+  await expect(page.getByRole('button', { name: /动作通道.*已关闭/ })).toBeDisabled();
+});
+
 test('320px report keeps two video columns and 44px touch targets', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await openReadyReport(page);
