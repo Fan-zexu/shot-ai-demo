@@ -77,3 +77,38 @@ def test_pipeline_does_not_reject_repeated_frames_for_an_altered_speed_template(
         check for check in artifact["quality"]["checks"] if check["code"] == "NORMAL_SPEED_CONFIRMED"
     )
     assert speed_check["status"] == "warning"
+
+
+def test_template_view_and_camera_checks_are_advisory_in_mvp_mode(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    video = create_video(tmp_path / "data" / "uploads" / "template.mp4", frames=90, size="720x720")
+    output = tmp_path / "data" / "artifacts" / "template-motion.json.gz"
+    monkeypatch.setattr("app.pipeline.classify_view", lambda _frames, _hand: "oblique")
+    monkeypatch.setattr(
+        "app.pipeline.estimate_global_motion",
+        lambda _path, _frames: {
+            "confident": True,
+            "medianTranslationRatio": 0.03,
+            "maxJumpRatio": 0.06,
+        },
+    )
+
+    response = analyze_motion(
+        AnalyzeMotionRequest(
+            request_id="job_template_advisory",
+            source_type="template",
+            file_path=str(video),
+            source_file_id="file_template_advisory",
+            source_sha256="c" * 64,
+            shooting_hand="right",
+            normal_speed_confirmed=False,
+            output_path=str(output),
+        ),
+        FakePoseBackend(),
+    )
+
+    assert response.status == "accepted", response.model_dump()
+    checks = {check.code: check.status for check in response.quality_report.checks}
+    assert checks["SIDE_VIEW"] == "warning"
+    assert checks["CAMERA_STABILITY"] == "warning"

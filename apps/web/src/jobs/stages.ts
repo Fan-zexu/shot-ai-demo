@@ -8,11 +8,11 @@ export const TEMPLATE_STAGES: DisplayStage[] = [
   { id: 'upload_received', label: '上传完成', detail: '原始文件已安全保存' },
   { id: 'validating_file', label: '基础文件检查', detail: '检查容器、时长和画面规格' },
   { id: 'extracting_pose', label: '提取姿态', detail: '逐帧识别全身关键点' },
-  { id: 'validating_pose_quality', label: '姿态质量检查', detail: '确认可见性与可比较区域' },
+  { id: 'validating_pose_quality', label: '记录质量提示', detail: '记录可见性与可比较区域' },
   { id: 'detecting_events', label: '识别动作事件', detail: '定位六个投篮动作事件' },
   { id: 'normalizing_motion', label: '归一化动作', detail: '建立与身材无关的动作坐标' },
   { id: 'writing_artifact', label: '生成模板', detail: '写入可复现的动作产物' },
-  { id: 'ready', label: '可使用', detail: '模板已通过质量门控' },
+  { id: 'ready', label: '可使用', detail: '模板动作产物已生成' },
 ];
 
 export const COMPARISON_STAGES: DisplayStage[] = [

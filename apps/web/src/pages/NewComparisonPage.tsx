@@ -89,7 +89,7 @@ export function NewComparisonPage({ initialTemplateId }: { initialTemplateId?: s
           <div className="section-number">01</div>
           <div className="section-content">
             <div className="section-heading">
-              <div><h2>选择参考模板</h2><p>只列出已经通过动作质量门控的模板。</p></div>
+              <div><h2>选择参考模板</h2><p>只列出已经生成完整动作产物的模板。</p></div>
               <span>{templates.length} READY</span>
             </div>
             {loading ? <div className="selection-loading">正在读取可用模板…</div> : null}

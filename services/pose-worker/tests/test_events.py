@@ -45,17 +45,36 @@ def test_detects_six_strictly_ordered_pose_events():
     assert all(event.confidence >= 0.6 for event in events.values())
 
 
-def test_multiple_shot_cycles_are_rejected_instead_of_silently_selecting_one():
+def test_two_crouch_peaks_before_one_wrist_lift_are_one_action():
     cycle = np.array([0.5, 0.52, 0.58, 0.66, 0.7, 0.64, 0.56, 0.5, 0.48, 0.47])
-    hip_y = np.concatenate([cycle, cycle])
+    hip_y = np.concatenate([cycle, cycle, np.full(10, 0.47)])
     length = len(hip_y)
     signals = MotionSignals(
         hip_y=hip_y,
         knee_angle_deg=np.linspace(100, 170, length),
-        wrist_above_shoulder=np.linspace(0, 0.4, length),
-        elbow_angle_deg=np.linspace(90, 170, length),
-        body_extension=np.linspace(0, 1, length),
+        wrist_above_shoulder=np.concatenate([np.zeros(15), np.linspace(0, 0.4, 10), np.full(5, 0.35)]),
+        elbow_angle_deg=np.concatenate([np.full(15, 90), np.linspace(90, 170, 10), np.full(5, 160)]),
+        body_extension=np.concatenate([np.full(15, 0.1), np.linspace(0.1, 1, 10), np.linspace(0.8, 0.2, 5)]),
         stability=np.full(length, 0.9),
+    )
+
+    events = detect_events(signals, fps=10)
+
+    assert len(events) == 6
+
+
+def test_multiple_shot_cycles_are_rejected_instead_of_silently_selecting_one():
+    hip_cycle = np.array([0.5, 0.52, 0.58, 0.66, 0.7, 0.64, 0.56, 0.5, 0.48, 0.47])
+    arm_cycle = np.concatenate([np.zeros(3), np.linspace(0, 0.4, 4), np.linspace(0.3, 0, 3)])
+    extension_cycle = arm_cycle / 0.4
+    hip_y = np.concatenate([hip_cycle, hip_cycle])
+    signals = MotionSignals(
+        hip_y=hip_y,
+        knee_angle_deg=np.concatenate([np.linspace(100, 170, 10)] * 2),
+        wrist_above_shoulder=np.concatenate([arm_cycle, arm_cycle]),
+        elbow_angle_deg=90 + 80 * np.concatenate([extension_cycle, extension_cycle]),
+        body_extension=np.concatenate([extension_cycle, extension_cycle]),
+        stability=np.full(len(hip_y), 0.9),
     )
 
     with pytest.raises(ValueError, match="MULTIPLE_ACTIONS_DETECTED"):

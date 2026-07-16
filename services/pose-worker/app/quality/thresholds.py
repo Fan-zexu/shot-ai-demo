@@ -15,7 +15,7 @@ class QualityThresholds:
 
 
 USER_THRESHOLDS = QualityThresholds(
-    min_duration_ms=3000,
+    min_duration_ms=1000,
     max_duration_ms=15000,
     min_short_side_px=720,
     min_fps=30,
@@ -26,11 +26,11 @@ USER_THRESHOLDS = QualityThresholds(
 )
 
 TEMPLATE_THRESHOLDS = QualityThresholds(
-    min_duration_ms=3000,
+    min_duration_ms=1000,
     max_duration_ms=15000,
     min_short_side_px=0,
     min_fps=0,
-    required_landmark_coverage=0.85,
+    required_landmark_coverage=0.75,
     max_consecutive_missing_frames=15,
     min_pose_confidence=0.55,
     min_event_confidence=0.60,

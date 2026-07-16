@@ -18,41 +18,34 @@ from app.models import (
 from app.quality.thresholds import QualityThresholds
 
 
-REQUIRED_NAMES = {
-    "nose",
-    "left_shoulder",
-    "right_shoulder",
-    "left_elbow",
-    "right_elbow",
-    "left_wrist",
-    "right_wrist",
-    "left_hip",
-    "right_hip",
-    "left_knee",
-    "right_knee",
-    "left_ankle",
-    "right_ankle",
-    "left_heel",
-    "right_heel",
-    "left_foot_index",
-    "right_foot_index",
-}
+def required_names(shooting_hand: ShootingHand) -> set[str]:
+    """Return the visible-side chain that must survive a side-view shot.
+
+    The far-side arm and leg naturally overlap in a true side view. Requiring
+    both anatomical sides to have high MediaPipe visibility turns occlusion
+    into a false out-of-frame rejection, even when the whole silhouette is in
+    the image.
+    """
+    return {
+        "nose",
+        f"{shooting_hand}_shoulder",
+        f"{shooting_hand}_wrist",
+        f"{shooting_hand}_hip",
+        f"{shooting_hand}_knee",
+        f"{shooting_hand}_ankle",
+        f"{shooting_hand}_foot_index",
+    }
 
 
 def region_names(shooting_hand: ShootingHand) -> dict[BodyRegion, set[str]]:
     guide_hand = "left" if shooting_hand == "right" else "right"
     return {
         "lower_body": {
-            "left_hip",
-            "right_hip",
-            "left_knee",
-            "right_knee",
-            "left_ankle",
-            "right_ankle",
-            "left_heel",
-            "right_heel",
-            "left_foot_index",
-            "right_foot_index",
+            f"{shooting_hand}_hip",
+            f"{shooting_hand}_knee",
+            f"{shooting_hand}_ankle",
+            f"{shooting_hand}_heel",
+            f"{shooting_hand}_foot_index",
         },
         "torso": {"left_shoulder", "right_shoulder", "left_hip", "right_hip"},
         "shooting_arm": {
@@ -65,7 +58,7 @@ def region_names(shooting_hand: ShootingHand) -> dict[BodyRegion, set[str]]:
             f"{guide_hand}_elbow",
             f"{guide_hand}_wrist",
         },
-        "whole_body_timing": REQUIRED_NAMES,
+        "whole_body_timing": required_names(shooting_hand),
     }
 
 
@@ -115,14 +108,28 @@ def evaluate_quality(
     checks: list[QualityCheck] = []
     rejection_codes = list(dict.fromkeys(timing_rejection_codes))
 
+    timeline_ok = not rejection_codes
+    checks.append(
+        QualityCheck(
+            code="VIDEO_TIMELINE",
+            status="pass" if timeline_ok else "fail",
+            measured_value=timeline_ok,
+            threshold="monotonic_and_continuous",
+            message="视频时间轴连续" if timeline_ok else "视频时间轴存在跳变或非单调帧",
+        )
+    )
+
     duration_ok = thresholds.min_duration_ms <= metadata.duration_ms <= thresholds.max_duration_ms
+    duration_range = (
+        f"{thresholds.min_duration_ms / 1000:g}–{thresholds.max_duration_ms / 1000:g} 秒"
+    )
     checks.append(
         QualityCheck(
             code="VIDEO_DURATION",
             status="pass" if duration_ok else "fail",
             measured_value=metadata.duration_ms,
             threshold=f"{thresholds.min_duration_ms}..{thresholds.max_duration_ms}",
-            message="视频时长符合要求" if duration_ok else "视频时长不在 3–15 秒范围内",
+            message="视频时长符合要求" if duration_ok else f"视频时长需为 {duration_range}",
         )
     )
     if not duration_ok:
@@ -179,7 +186,8 @@ def evaluate_quality(
     if speed_required and not normal_speed_confirmed:
         rejection_codes.append("ABNORMAL_VIDEO_TIMING")
 
-    required_coverage, required_evidence = _coverage(frames, REQUIRED_NAMES)
+    required = required_names(shooting_hand)
+    required_coverage, required_evidence = _coverage(frames, required)
     coverage_ok = required_coverage >= thresholds.required_landmark_coverage
     checks.append(
         QualityCheck(
@@ -188,20 +196,28 @@ def evaluate_quality(
             measured_value=round(required_coverage, 4),
             threshold=thresholds.required_landmark_coverage,
             evidence_frame_indices=required_evidence[:30] or None,
-            message="全身关键点覆盖稳定" if coverage_ok else "人物没有保持全身入镜",
+            message=(
+                "投篮侧全身关键点覆盖稳定"
+                if coverage_ok
+                else "头部、投篮侧手臂或脚部没有持续可靠识别"
+            ),
         )
     )
     if not coverage_ok:
         rejection_codes.append("USER_BODY_OUT_OF_FRAME" if source_type == "user" else "LOW_POSE_CONFIDENCE")
 
-    longest_gap = _longest_consecutive_gap(frames, REQUIRED_NAMES)
-    gap_ok = longest_gap <= thresholds.max_consecutive_missing_frames
+    longest_gap = _longest_consecutive_gap(frames, required)
+    max_gap_frames = max(
+        1,
+        round(thresholds.max_consecutive_missing_frames * metadata.nominal_fps / 30),
+    )
+    gap_ok = longest_gap <= max_gap_frames
     checks.append(
         QualityCheck(
             code="MAX_CONSECUTIVE_MISSING_FRAMES",
             status="pass" if gap_ok else "fail",
             measured_value=longest_gap,
-            threshold=thresholds.max_consecutive_missing_frames,
+            threshold=max_gap_frames,
             message="关键点缺失没有形成长空白" if gap_ok else "关键身体部位连续缺失时间过长",
         )
     )
@@ -241,6 +257,17 @@ def evaluate_quality(
         rejection_codes.append("INSUFFICIENT_COMPARABLE_REGIONS")
 
     rejection_codes = list(dict.fromkeys(rejection_codes))
+    if source_type == "template" and rejection_codes:
+        # The local MVP uses externally sourced teaching and athlete clips.
+        # Keep their quality evidence, but let event extraction decide whether
+        # enough motion data exists to build a usable reference artifact.
+        checks = [
+            check.model_copy(update={"status": "warning"})
+            if check.status == "fail"
+            else check
+            for check in checks
+        ]
+        rejection_codes = []
     return QualityReport(
         source_file_id=source_file_id,
         source_type=source_type,

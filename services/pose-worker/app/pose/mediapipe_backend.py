@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import hashlib
+from math import hypot
 from pathlib import Path
+from statistics import median
 
 import cv2
 import mediapipe as mp
@@ -45,11 +47,29 @@ LANDMARK_NAMES = (
     "right_foot_index",
 )
 
+_AMBIGUOUS_TRACK_DISTANCE_MARGIN = 0.0004
+_OVERLAPPING_HIP_DISTANCE = 0.04
+_OVERLAPPING_MEDIAN_LANDMARK_DISTANCE = 0.08
+
 
 def _hip_center(candidate) -> tuple[float, float]:
     left = candidate[23]
     right = candidate[24]
     return ((left.x + right.x) / 2, (left.y + right.y) / 2)
+
+
+def _candidates_overlap(first, second) -> bool:
+    first_hip = _hip_center(first)
+    second_hip = _hip_center(second)
+    hip_distance = hypot(first_hip[0] - second_hip[0], first_hip[1] - second_hip[1])
+    landmark_distance = median(
+        hypot(first_point.x - second_point.x, first_point.y - second_point.y)
+        for first_point, second_point in zip(first, second, strict=True)
+    )
+    return (
+        hip_distance <= _OVERLAPPING_HIP_DISTANCE
+        and landmark_distance <= _OVERLAPPING_MEDIAN_LANDMARK_DISTANCE
+    )
 
 
 def _select_candidate(candidates, previous: tuple[float, float] | None):
@@ -67,7 +87,13 @@ def _select_candidate(candidates, previous: tuple[float, float] | None):
         second = _hip_center(ranked[1])
         first_distance = (first[0] - previous[0]) ** 2 + (first[1] - previous[1]) ** 2
         second_distance = (second[0] - previous[0]) ** 2 + (second[1] - previous[1]) ** 2
-        if abs(second_distance - first_distance) < 0.0004:
+        # Pose Landmarker can emit two nearly identical skeletons for one
+        # person. Treat those as duplicate detections; only spatially distinct
+        # candidates with equally plausible track continuity are ambiguous.
+        if (
+            abs(second_distance - first_distance) < _AMBIGUOUS_TRACK_DISTANCE_MARGIN
+            and not _candidates_overlap(ranked[0], ranked[1])
+        ):
             raise ValueError("AMBIGUOUS_PERSON_TRACK")
     return ranked[0]
 

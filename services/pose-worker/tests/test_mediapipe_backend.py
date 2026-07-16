@@ -3,12 +3,38 @@ from types import SimpleNamespace
 
 import pytest
 
-from app.pose.mediapipe_backend import MediaPipePoseBackend
+from app.pose.mediapipe_backend import MediaPipePoseBackend, _select_candidate
 from app.video.probe import probe_video
 from tests.fixtures import create_video
 
 
 MODEL_PATH = Path(__file__).resolve().parents[3] / "models" / "pose_landmarker_full.task"
+
+
+def pose_candidate(*, hip_x: float, limb_offset: float = 0):
+    return [
+        SimpleNamespace(
+            x=hip_x + (limb_offset if index < 23 else 0),
+            y=0.5 + (limb_offset if index < 23 else 0),
+            visibility=0.95,
+        )
+        for index in range(33)
+    ]
+
+
+def test_overlapping_pose_candidates_are_treated_as_one_person():
+    closest = pose_candidate(hip_x=0.51)
+    duplicate = pose_candidate(hip_x=0.52, limb_offset=0.01)
+
+    assert _select_candidate([closest, duplicate], (0.50, 0.50)) is closest
+
+
+def test_distinct_equidistant_pose_candidates_remain_ambiguous():
+    left = pose_candidate(hip_x=0.45)
+    right = pose_candidate(hip_x=0.55)
+
+    with pytest.raises(ValueError, match="AMBIGUOUS_PERSON_TRACK"):
+        _select_candidate([left, right], (0.50, 0.50))
 
 
 @pytest.mark.skipif(not MODEL_PATH.is_file(), reason="run pnpm model:download")

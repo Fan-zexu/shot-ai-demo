@@ -56,7 +56,7 @@ export function TemplatesPage() {
         <div>
           <span className="eyebrow">REFERENCE SET / 参考动作</span>
           <h1>模板工作台</h1>
-          <p>通过真实质量门控的动作，才会进入对比候选。</p>
+          <p>先记录质量提示；能形成完整动作产物，就可以进入对比候选。</p>
         </div>
         <button className="button button-primary" type="button" onClick={() => setShowForm(true)}>
           <span aria-hidden="true">＋</span> 上传模板
@@ -66,7 +66,7 @@ export function TemplatesPage() {
       <section className="lab-strip" aria-label="模板流程">
         <span>本地视频</span><i />
         <span>动作解析</span><i />
-        <span>质量门控</span><i />
+        <span>质量提示</span><i />
         <strong>可用模板</strong>
       </section>
 

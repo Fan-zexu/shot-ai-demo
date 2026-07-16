@@ -70,6 +70,84 @@ def test_template_quality_allows_unconfirmed_playback_speed_with_a_warning():
     assert "ABNORMAL_VIDEO_TIMING" not in report.rejection_codes
 
 
+def test_complete_two_second_shots_are_not_rejected_by_duration_alone():
+    metadata = user_metadata().model_copy(update={"duration_ms": 2000, "frame_count": 60})
+    for source_type, thresholds, speed_confirmed in (
+        ("user", USER_THRESHOLDS, True),
+        ("template", TEMPLATE_THRESHOLDS, False),
+    ):
+        report = evaluate_quality(
+            metadata=metadata,
+            frames=make_frames(count=60),
+            source_type=source_type,
+            shooting_hand="right",
+            normal_speed_confirmed=speed_confirmed,
+            timing_rejection_codes=[],
+            thresholds=thresholds,
+        )
+
+        duration = next(item for item in report.checks if item.code == "VIDEO_DURATION")
+        assert duration.status == "pass"
+        assert "ABNORMAL_VIDEO_TIMING" not in report.rejection_codes
+
+
+def test_template_allows_natural_far_side_occlusion_in_a_side_view():
+    frames = make_frames(count=60)
+    far_side_names = {
+        "left_elbow",
+        "left_wrist",
+        "left_knee",
+        "left_ankle",
+        "left_heel",
+        "left_foot_index",
+    }
+    frames = [
+        frame.model_copy(
+            update={
+                "landmarks": [
+                    point.model_copy(update={"visibility": 0.2})
+                    if point.name in far_side_names
+                    else point
+                    for point in frame.landmarks
+                ]
+            }
+        )
+        for frame in frames
+    ]
+
+    report = evaluate_quality(
+        metadata=user_metadata(),
+        frames=frames,
+        source_type="template",
+        shooting_hand="right",
+        normal_speed_confirmed=False,
+        timing_rejection_codes=[],
+        thresholds=TEMPLATE_THRESHOLDS,
+    )
+
+    assert report.status == "accepted"
+    assert "guide_arm" in report.rejected_regions
+    assert {"lower_body", "torso", "shooting_arm", "whole_body_timing"}.issubset(
+        report.comparable_regions
+    )
+
+
+def test_template_quality_failures_are_advisory_during_mvp_testing():
+    report = evaluate_quality(
+        metadata=user_metadata().model_copy(update={"duration_ms": 500}),
+        frames=make_frames(count=30, missing_feet_from=0),
+        source_type="template",
+        shooting_hand="right",
+        normal_speed_confirmed=False,
+        timing_rejection_codes=["ABNORMAL_VIDEO_TIMING"],
+        thresholds=TEMPLATE_THRESHOLDS,
+    )
+
+    assert report.status == "accepted"
+    assert report.rejection_codes == []
+    assert any(check.status == "warning" for check in report.checks)
+
+
 def test_user_quality_rejects_an_eleven_frame_landmark_gap_even_when_total_coverage_passes():
     report = evaluate_quality(
         metadata=user_metadata(),

@@ -20,6 +20,30 @@ def _normalize(values: np.ndarray) -> np.ndarray:
     return (values - minimum) / span
 
 
+def _count_shooting_arm_lifts(
+    signals: MotionSignals,
+    *,
+    after: int,
+) -> int:
+    """Count complete wrist-lift cycles with hysteresis after preparation.
+
+    A single shot may contain more than one hip descent peak because of a
+    bounce, slow motion, or pose jitter. A second action is only reported after
+    the shooting wrist has lifted, reset, and lifted again.
+    """
+    wrist = signals.wrist_above_shoulder[after:]
+    normalized = _normalize(wrist)
+    armed = True
+    cycles = 0
+    for raw_value, normalized_value in zip(wrist, normalized, strict=True):
+        if normalized_value <= 0.30:
+            armed = True
+        elif normalized_value >= 0.75 and raw_value >= 0.015 and armed:
+            cycles += 1
+            armed = False
+    return cycles
+
+
 def detect_events(signals: MotionSignals, *, fps: float) -> dict[MotionEventName, MotionEvent]:
     """Locate the six ordered pose events defined by the MVP contract."""
     frame_count = len(signals.hip_y)
@@ -28,8 +52,9 @@ def detect_events(signals: MotionSignals, *, fps: float) -> dict[MotionEventName
         prominence=0.035,
         distance=max(3, int(round(fps * 0.5))),
     )
-    if len(descent_peaks) > 1:
-        raise ValueError("MULTIPLE_ACTIONS_DETECTED: multiple body-lowest candidates")
+    cycle_start = int(descent_peaks[0]) if len(descent_peaks) else int(np.argmax(signals.hip_y))
+    if _count_shooting_arm_lifts(signals, after=cycle_start) > 1:
+        raise ValueError("MULTIPLE_ACTIONS_DETECTED: multiple shooting-arm lift cycles")
     body_lowest = int(np.argmax(signals.hip_y))
 
     stable_before = np.flatnonzero(signals.stability[:body_lowest] >= 0.8)
