@@ -56,7 +56,7 @@ services/pose-worker/        FastAPI、MediaPipe、OpenCV 和 FFmpeg 管线
 docs/                        开发与验证说明
 ```
 
-日常启动与重启见 [`docs/startup.md`](./docs/startup.md)，开发命令见 [`docs/development.md`](./docs/development.md)，工程证据与真实样本验收表见 [`docs/validation.md`](./docs/validation.md)。产品和算法边界以 Short AI 主工作区的 `docs/shot-comparison/prd.md` 与 `docs/shot-comparison/technical-design.md` 为实现来源；本仓库保留了对应的 [MVP 设计快照](./docs/superpowers/specs/2026-07-15-shot-comparison-mvp-design.md) 和历史实现清单，便于独立审阅。
+日常启动与重启见 [`docs/startup.md`](./docs/startup.md)，开发命令见 [`docs/development.md`](./docs/development.md)，工程证据与真实样本验收表见 [`docs/validation.md`](./docs/validation.md)。报告交互现状、真实样本问题、原因分级和下一轮改造边界见 [`docs/report-interaction-handoff-2026-07-16.md`](./docs/report-interaction-handoff-2026-07-16.md)。产品和算法边界以 Short AI 主工作区的 `docs/shot-comparison/prd.md` 与 `docs/shot-comparison/technical-design.md` 为实现来源；本仓库保留了对应的 [MVP 设计快照](./docs/superpowers/specs/2026-07-15-shot-comparison-mvp-design.md) 和历史实现清单，便于独立审阅。
 
 ## 验证
 
