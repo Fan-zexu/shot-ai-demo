@@ -42,6 +42,7 @@ describe('shared report playback', () => {
 
     await user.click(screen.getByRole('button', { name: /身体最低点/ }));
     expect(workspace).toHaveAttribute('data-sample-index', '1');
+    expect(screen.getByRole('region', { name: '当前观察重点' })).toHaveTextContent('最低点 → 伸展');
     await user.click(screen.getByRole('button', { name: /骨架叠加/ }));
     expect(workspace).toHaveAttribute('data-mode', 'skeleton_overlay');
     expect(workspace).toHaveAttribute('data-sample-index', '1');
@@ -192,6 +193,25 @@ describe('capture compatibility degradation', () => {
     expect(screen.getByRole('button', { name: /骨架叠加.*已关闭/ })).toBeDisabled();
     expect(screen.getByRole('button', { name: /动作通道.*已关闭/ })).toBeDisabled();
   });
+});
+
+test('report leads with the current observation and keeps technical metrics collapsed below it', async () => {
+  const user = userEvent.setup();
+  const { container } = render(<ReportWorkspace report={reportFixture()} />);
+
+  expect(container.querySelector('.report-header dl')).toBeNull();
+  expect(screen.getByRole('region', { name: '当前观察重点' })).toHaveTextContent('准备 → 最低点');
+  expect(screen.getByRole('region', { name: '当前观察重点' })).toHaveTextContent('投篮手臂');
+  expect(screen.getByText('与模板差异明显')).toBeInTheDocument();
+  expect(screen.getAllByText(/不代表动作错误或训练建议/).length).toBeGreaterThan(0);
+
+  const technicalEvidence = container.querySelector('.technical-evidence')!;
+  expect(technicalEvidence).not.toHaveAttribute('open');
+  expect(screen.getByText(/TEMPLATE F0/)).not.toBeVisible();
+  await user.click(technicalEvidence.querySelector('summary')!);
+  expect(screen.getByText(/TEMPLATE F0/)).toBeVisible();
+  expect(technicalEvidence).toHaveTextContent('同步采样');
+  expect(technicalEvidence).toHaveTextContent('角度差');
 });
 
 test('event anchors map to the six shared timeline samples', () => {

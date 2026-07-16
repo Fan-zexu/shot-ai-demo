@@ -9,8 +9,11 @@ test('three report modes preserve the shared sample and playing state', async ({
 
   await timeline.fill('3');
   await expect(workspace).toHaveAttribute('data-sample-index', '3');
-  await expect(page.getByText('TEMPLATE F6')).toBeVisible();
-  await expect(page.getByText('USER F9')).toBeVisible();
+  await expect(page.getByRole('region', { name: '当前观察重点' })).toContainText('准备 → 最低点');
+  await expect(page.getByText(/TEMPLATE F6/)).toBeHidden();
+  await page.locator('.technical-evidence > summary').click();
+  await expect(page.getByText(/TEMPLATE F6/)).toBeVisible();
+  await expect(page.getByText(/USER F9/)).toBeVisible();
 
   await page.getByRole('button', { name: '播放动作' }).click();
   await page.getByRole('button', { name: /骨架叠加/ }).click();

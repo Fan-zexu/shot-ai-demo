@@ -109,7 +109,6 @@ export function PlaybackControls({
         <div className="timeline-control">
           <div className="timeline-meta">
             <strong>{phaseLabel(result, current.phaseIndex)}</strong>
-            <span>SAMPLE {String(state.sampleIndex + 1).padStart(3, '0')} / {String(totalSamples).padStart(3, '0')}</span>
           </div>
           <div className="range-wrap">
             <input
@@ -134,10 +133,6 @@ export function PlaybackControls({
                 />
               ))}
             </div>
-          </div>
-          <div className="frame-map">
-            <span>TEMPLATE F{current.templateFrameIndex}</span>
-            <span>USER F{current.userFrameIndex}</span>
           </div>
         </div>
       </div>

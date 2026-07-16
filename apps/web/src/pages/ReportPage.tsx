@@ -10,6 +10,7 @@ import { DebugPanel } from '../report/DebugPanel.tsx';
 import { fitReportToView } from '../report/fit-to-view.ts';
 import { ModeSwitcher, PlaybackControls } from '../report/PlaybackControls.tsx';
 import { MotionChannelRenderer } from '../report/MotionChannelRenderer.tsx';
+import { ObservationFocus } from '../report/ObservationFocus.tsx';
 import {
   buildPresentationSequence,
   interpolateReportFrames,
@@ -19,6 +20,7 @@ import { usePlayback, useRenderFps } from '../report/playback.ts';
 import { RegionEvidence } from '../report/RegionEvidence.tsx';
 import { SideBySideRenderer } from '../report/SideBySideRenderer.tsx';
 import { SkeletonOverlayRenderer } from '../report/SkeletonOverlayRenderer.tsx';
+import { TechnicalEvidence } from '../report/TechnicalEvidence.tsx';
 
 export function ReportPage({ comparisonId }: { comparisonId: string }) {
   const [report, setReport] = useState<ReportBundle | null>(null);
@@ -93,14 +95,14 @@ export function ReportWorkspace({ report }: { report: ReportBundle }) {
             <h1>动作对比报告</h1>
             <p>参考：{report.template.name} · {report.template.shootingHand === 'right' ? '右手投篮' : '左手投篮'}</p>
           </div>
-          <dl>
-            <div><dt>同步采样</dt><dd>{report.renderFrames.length}</dd></div>
-            <div><dt>差异窗口</dt><dd>{report.comparison.deviationWindows.length}</dd></div>
-            <div><dt>可比较区域</dt><dd>{report.comparison.compatibility.comparableRegions.length} / 5</dd></div>
-          </dl>
         </header>
 
         <CaptureCompatibilityNotice compatibility={report.presentationCompatibility} />
+        <ObservationFocus
+          result={report.comparison}
+          phaseIndex={sample.phaseIndex}
+          differences={sample.differences}
+        />
         <ModeSwitcher
           state={state}
           dispatch={dispatch}
@@ -139,6 +141,7 @@ export function ReportWorkspace({ report }: { report: ReportBundle }) {
 
         <PlaybackControls result={report.comparison} state={state} dispatch={dispatch} />
         <RegionEvidence differences={sample.differences} />
+        <TechnicalEvidence report={report} sample={sample} />
         <DebugPanel
           report={report}
           frame={rawFrame}
