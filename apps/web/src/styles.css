@@ -2214,6 +2214,15 @@ input::placeholder {
 .debug-panel > summary span { display: grid; color: var(--muted); font-size: 0.65rem; }
 .debug-panel > summary b { color: var(--template); font-family: var(--mono); font-size: 0.63rem; letter-spacing: 0.1em; }
 .debug-panel > summary code { color: var(--muted-dark); font-family: var(--mono); font-size: 0.58rem; }
+.debug-landmark-control label {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.25rem 0.6rem;
+  color: var(--text);
+}
+.debug-landmark-control input { width: 1rem; height: 1rem; }
+.debug-landmark-control small { grid-column: 2; color: var(--muted); }
 
 .debug-content {
   display: grid;

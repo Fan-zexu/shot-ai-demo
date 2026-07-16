@@ -8,10 +8,12 @@ export function MotionChannelRenderer({
   report,
   frame,
   sample,
+  showAllLandmarks,
 }: {
   report: ReportBundle;
   frame: ReportFrame;
   sample: TimelineSample;
+  showAllLandmarks: boolean;
 }) {
   return (
     <section className="renderer motion-channel-renderer" aria-label="动态参考动作通道">
@@ -30,6 +32,7 @@ export function MotionChannelRenderer({
               shootingHand={report.template.shootingHand}
               differences={sample.differences}
               channelRadiusByRegion={report.comparison.visualization.channelRadiusByRegion}
+              showAllLandmarks={showAllLandmarks}
             />
             <SkeletonLayer
               points={frame.templateNormalizedSkeleton}
@@ -37,6 +40,7 @@ export function MotionChannelRenderer({
               variant="template"
               shootingHand={report.template.shootingHand}
               differences={sample.differences}
+              showAllLandmarks={showAllLandmarks}
             />
             <SkeletonLayer
               points={frame.userNormalizedSkeleton}
@@ -44,6 +48,7 @@ export function MotionChannelRenderer({
               variant="user"
               shootingHand={report.template.shootingHand}
               differences={sample.differences}
+              showAllLandmarks={showAllLandmarks}
             />
           </svg>
           <span className="normalized-legend legend-template">参考通道</span>

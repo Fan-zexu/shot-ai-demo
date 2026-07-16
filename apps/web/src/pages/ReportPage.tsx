@@ -51,6 +51,7 @@ export function ReportPage({ comparisonId }: { comparisonId: string }) {
 }
 
 export function ReportWorkspace({ report }: { report: ReportBundle }) {
+  const [showAllLandmarks, setShowAllLandmarks] = useState(false);
   const { state, dispatch, totalSamples, displayTimeline, effectiveRate } = usePlayback(report.comparison);
   const sample = report.comparison.renderTimeline[state.sampleIndex]!;
   const frame = report.renderFrames[state.sampleIndex]!;
@@ -98,14 +99,35 @@ export function ReportWorkspace({ report }: { report: ReportBundle }) {
             state={state}
             effectiveRate={effectiveRate}
             onMasterFrame={onMasterFrame}
+            showAllLandmarks={showAllLandmarks}
           />
         ) : null}
-        {state.mode === 'skeleton_overlay' ? <SkeletonOverlayRenderer report={report} frame={frame} sample={sample} /> : null}
-        {state.mode === 'motion_channel' ? <MotionChannelRenderer report={report} frame={frame} sample={sample} /> : null}
+        {state.mode === 'skeleton_overlay' ? (
+          <SkeletonOverlayRenderer
+            report={report}
+            frame={frame}
+            sample={sample}
+            showAllLandmarks={showAllLandmarks}
+          />
+        ) : null}
+        {state.mode === 'motion_channel' ? (
+          <MotionChannelRenderer
+            report={report}
+            frame={frame}
+            sample={sample}
+            showAllLandmarks={showAllLandmarks}
+          />
+        ) : null}
 
         <PlaybackControls result={report.comparison} state={state} dispatch={dispatch} />
         <RegionEvidence differences={sample.differences} />
-        <DebugPanel report={report} frame={frame} sample={sample} />
+        <DebugPanel
+          report={report}
+          frame={frame}
+          sample={sample}
+          showAllLandmarks={showAllLandmarks}
+          onShowAllLandmarksChange={setShowAllLandmarks}
+        />
       </article>
     </AppShell>
   );

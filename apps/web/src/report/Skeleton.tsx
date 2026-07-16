@@ -21,6 +21,7 @@ interface SkeletonLayerProps {
   centerX?: number;
   scale?: number;
   channelRadiusByRegion?: Record<BodyRegion, number>;
+  showAllLandmarks?: boolean;
 }
 
 interface Connection {
@@ -28,6 +29,28 @@ interface Connection {
   to: string;
   region: BodyRegion;
 }
+
+export const CORE_DISPLAY_LANDMARKS = [
+  'nose',
+  'left_shoulder',
+  'right_shoulder',
+  'left_elbow',
+  'right_elbow',
+  'left_wrist',
+  'right_wrist',
+  'left_hip',
+  'right_hip',
+  'left_knee',
+  'right_knee',
+  'left_ankle',
+  'right_ankle',
+  'left_heel',
+  'right_heel',
+  'left_foot_index',
+  'right_foot_index',
+] as const;
+
+const coreDisplayLandmarks = new Set<string>(CORE_DISPLAY_LANDMARKS);
 
 export function SkeletonLayer({
   points,
@@ -38,9 +61,13 @@ export function SkeletonLayer({
   centerX = 240,
   scale = 150,
   channelRadiusByRegion,
+  showAllLandmarks = false,
 }: SkeletonLayerProps) {
   const pointMap = new Map(points.map((point) => [point.name, point]));
   const connections = skeletonConnections(shootingHand);
+  const displayPoints = showAllLandmarks
+    ? points
+    : points.filter((point) => coreDisplayLandmarks.has(point.name));
 
   return (
     <g className={`skeleton-layer skeleton-${variant}`} aria-hidden="true">
@@ -72,7 +99,7 @@ export function SkeletonLayer({
           />
         );
       })}
-      {points.map((point) => {
+      {displayPoints.map((point) => {
         if (confidence(point) < 0.35) return null;
         const position = coordinates(point, coordinateSpace, centerX, scale);
         const region = jointRegion(point.name, shootingHand);
@@ -86,6 +113,7 @@ export function SkeletonLayer({
             cy={position.y}
             r={variant === 'channel' ? 9 : coordinateSpace === 'video' ? 8 : 4.5}
             className={showEvidence ? 'is-evidence' : ''}
+            data-landmark={point.name}
             data-region={region ?? undefined}
             data-highlighted-region={showEvidence ? region ?? undefined : undefined}
           />

@@ -74,6 +74,42 @@ describe('shared report playback', () => {
   });
 });
 
+describe('shared landmark presentation', () => {
+  test('all three user modes default to the same semantic core joints', async () => {
+    const user = userEvent.setup();
+    const report = reportFixture();
+    const { container } = render(<ReportWorkspace report={report} />);
+
+    expect(report.renderFrames[0]!.templateVideoSkeleton.some((point) => point.name === 'left_eye')).toBe(true);
+    expect(container.querySelectorAll('[data-landmark="nose"]').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('[data-landmark="left_eye"]')).toHaveLength(0);
+    expect(container.querySelectorAll('[data-landmark="right_index"]')).toHaveLength(0);
+
+    await user.click(screen.getByRole('button', { name: /骨架叠加/ }));
+    expect(container.querySelectorAll('[data-landmark="nose"]').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('[data-landmark="left_eye"]')).toHaveLength(0);
+
+    await user.click(screen.getByRole('button', { name: /动作通道/ }));
+    expect(container.querySelectorAll('[data-landmark="nose"]').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('[data-landmark="left_eye"]')).toHaveLength(0);
+  });
+
+  test('full landmarks appear only after the desktop debug control is enabled', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<ReportWorkspace report={reportFixture()} />);
+
+    await user.click(container.querySelector('.debug-panel > summary')!);
+    const toggle = screen.getByRole('checkbox', { name: '显示完整 33 点' });
+    expect(toggle).not.toBeChecked();
+    expect(container.querySelectorAll('[data-landmark="left_eye"]')).toHaveLength(0);
+
+    await user.click(toggle);
+    expect(toggle).toBeChecked();
+    expect(container.querySelectorAll('[data-landmark="left_eye"]').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('[data-landmark="right_index"]').length).toBeGreaterThan(0);
+  });
+});
+
 test('event anchors map to the six shared timeline samples', () => {
   expect(eventSampleIndices(reportFixture().comparison)).toEqual({
     prep_start: 0,

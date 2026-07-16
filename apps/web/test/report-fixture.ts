@@ -41,6 +41,11 @@ const basePose: NormalizedLandmark2D[] = [
   { name: 'right_heel', x: 0.12, y: 1.07, confidence: 0.9 },
   { name: 'left_foot_index', x: -0.05, y: 1.1, confidence: 0.9 },
   { name: 'right_foot_index', x: 0.25, y: 1.1, confidence: 0.9 },
+  { name: 'left_eye', x: -0.03, y: -0.92, confidence: 0.89 },
+  { name: 'right_eye', x: 0.03, y: -0.92, confidence: 0.9 },
+  { name: 'mouth_left', x: -0.02, y: -0.86, confidence: 0.88 },
+  { name: 'right_index', x: 0.39, y: -0.16, confidence: 0.87 },
+  { name: 'left_pinky', x: -0.31, y: -0.01, confidence: 0.86 },
 ];
 
 function differences(): RegionDifferences {

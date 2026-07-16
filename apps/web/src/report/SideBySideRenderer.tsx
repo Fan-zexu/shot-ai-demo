@@ -13,6 +13,7 @@ interface SideBySideRendererProps {
   state: PlaybackState;
   effectiveRate: PlaybackRate;
   onMasterFrame: (displayFrameIndex: number) => void;
+  showAllLandmarks: boolean;
 }
 
 interface FrameVideo {
@@ -27,6 +28,7 @@ export function SideBySideRenderer({
   state,
   effectiveRate,
   onMasterFrame,
+  showAllLandmarks,
 }: SideBySideRendererProps) {
   const templateRef = useRef<HTMLVideoElement>(null);
   const userRef = useRef<HTMLVideoElement>(null);
@@ -144,6 +146,7 @@ export function SideBySideRenderer({
           differences={sample.differences}
           onWaiting={handleWaiting}
           onCanPlay={handleCanPlay}
+          showAllLandmarks={showAllLandmarks}
         />
         <VideoPane
           label="你的动作"
@@ -156,6 +159,7 @@ export function SideBySideRenderer({
           differences={sample.differences}
           onWaiting={handleWaiting}
           onCanPlay={handleCanPlay}
+          showAllLandmarks={showAllLandmarks}
         />
       </div>
       {buffering ? <p className="buffering-signal" role="status">一侧视频正在缓冲，两侧已同步暂停</p> : null}
@@ -174,6 +178,7 @@ function VideoPane({
   differences,
   onWaiting,
   onCanPlay,
+  showAllLandmarks,
 }: {
   label: string;
   tone: 'template' | 'user';
@@ -185,6 +190,7 @@ function VideoPane({
   differences: TimelineSample['differences'];
   onWaiting: () => void;
   onCanPlay: () => void;
+  showAllLandmarks: boolean;
 }) {
   const [aspectRatio, setAspectRatio] = useState('9 / 16');
   return (
@@ -213,6 +219,7 @@ function VideoPane({
               variant={tone}
               shootingHand={shootingHand}
               differences={differences}
+              showAllLandmarks={showAllLandmarks}
             />
           </svg>
         ) : null}

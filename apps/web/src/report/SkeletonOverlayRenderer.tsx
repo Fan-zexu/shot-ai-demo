@@ -9,10 +9,12 @@ export function SkeletonOverlayRenderer({
   report,
   frame,
   sample,
+  showAllLandmarks,
 }: {
   report: ReportBundle;
   frame: ReportFrame;
   sample: TimelineSample;
+  showAllLandmarks: boolean;
 }) {
   const [separated, setSeparated] = useState(false);
   const templateCenter = separated ? 145 : 240;
@@ -47,6 +49,7 @@ export function SkeletonOverlayRenderer({
             differences={sample.differences}
             centerX={templateCenter}
             scale={scale}
+            showAllLandmarks={showAllLandmarks}
           />
           <SkeletonLayer
             points={frame.userNormalizedSkeleton}
@@ -56,6 +59,7 @@ export function SkeletonOverlayRenderer({
             differences={sample.differences}
             centerX={userCenter}
             scale={scale}
+            showAllLandmarks={showAllLandmarks}
           />
         </svg>
         <span className="normalized-legend legend-template">模板 / 虚线</span>

@@ -11,10 +11,14 @@ export function DebugPanel({
   report,
   frame,
   sample,
+  showAllLandmarks,
+  onShowAllLandmarksChange,
 }: {
   report: ReportBundle;
   frame: ReportFrame;
   sample: TimelineSample;
+  showAllLandmarks: boolean;
+  onShowAllLandmarksChange: (show: boolean) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [summary, setSummary] = useState<DebugSummary | null>(null);
@@ -35,6 +39,19 @@ export function DebugPanel({
         <code>{report.comparison.resultId}</code>
       </summary>
       <div className="debug-content">
+        <section className="debug-landmark-control">
+          <h3>骨架显示</h3>
+          <label>
+            <input
+              type="checkbox"
+              aria-label="显示完整 33 点"
+              checked={showAllLandmarks}
+              onChange={(event) => onShowAllLandmarksChange(event.target.checked)}
+            />
+            <span>显示完整 33 点</span>
+            <small>仅用于调试；默认用户视图始终只显示语义清晰的核心关节。</small>
+          </label>
+        </section>
         <section>
           <h3>当前帧映射</h3>
           <dl className="debug-metrics">
