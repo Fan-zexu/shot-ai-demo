@@ -126,6 +126,25 @@ describe('shared landmark presentation', () => {
   });
 });
 
+test('overlay and channel share one action-wide fit that does not change across samples', async () => {
+  const user = userEvent.setup();
+  const { container } = render(<ReportWorkspace report={reportFixture()} />);
+
+  await user.click(screen.getByRole('button', { name: /骨架叠加/ }));
+  const overlay = container.querySelector('.skeleton-overlay-renderer svg')!;
+  const scale = overlay.getAttribute('data-fit-scale');
+  const center = overlay.getAttribute('data-fit-center');
+
+  await user.click(screen.getByRole('button', { name: /释放姿态代理/ }));
+  expect(overlay).toHaveAttribute('data-fit-scale', scale);
+  expect(overlay).toHaveAttribute('data-fit-center', center);
+
+  await user.click(screen.getByRole('button', { name: /动作通道/ }));
+  const channel = container.querySelector('.motion-channel-renderer svg')!;
+  expect(channel).toHaveAttribute('data-fit-scale', scale);
+  expect(channel).toHaveAttribute('data-fit-center', center);
+});
+
 test('event anchors map to the six shared timeline samples', () => {
   expect(eventSampleIndices(reportFixture().comparison)).toEqual({
     prep_start: 0,

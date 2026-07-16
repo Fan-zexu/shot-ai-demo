@@ -1,5 +1,6 @@
 import type { ReportBundle, ReportFrame, TimelineSample } from '@shot-ai/contracts';
 
+import type { ReportViewFit } from './fit-to-view.ts';
 import { REGION_LABELS, REGION_ORDER, regionIsAvailable } from './regions.ts';
 import { SkeletonLayer } from './Skeleton.tsx';
 import { CourtGrid } from './SkeletonOverlayRenderer.tsx';
@@ -9,12 +10,15 @@ export function MotionChannelRenderer({
   frame,
   sample,
   showAllLandmarks,
+  viewFit,
 }: {
   report: ReportBundle;
   frame: ReportFrame;
   sample: TimelineSample;
   showAllLandmarks: boolean;
+  viewFit: ReportViewFit;
 }) {
+  const transform = viewFit.overlay;
   return (
     <section className="renderer motion-channel-renderer" aria-label="动态参考动作通道">
       <div className="renderer-toolbar">
@@ -23,7 +27,13 @@ export function MotionChannelRenderer({
       </div>
       <div className="channel-layout">
         <div className="normalized-stage channel-stage">
-          <svg viewBox="0 0 480 400" role="img" aria-label="用户骨架与动态参考动作通道">
+          <svg
+            viewBox="0 0 480 400"
+            role="img"
+            aria-label="用户骨架与动态参考动作通道"
+            data-fit-scale={transform.scale.toFixed(3)}
+            data-fit-center={`${transform.centerX.toFixed(3)},${transform.centerY.toFixed(3)}`}
+          >
             <CourtGrid />
             <SkeletonLayer
               points={frame.templateNormalizedSkeleton}
@@ -32,6 +42,9 @@ export function MotionChannelRenderer({
               shootingHand={report.template.shootingHand}
               differences={sample.differences}
               channelRadiusByRegion={report.comparison.visualization.channelRadiusByRegion}
+              centerX={transform.centerX}
+              centerY={transform.centerY}
+              scale={transform.scale}
               showAllLandmarks={showAllLandmarks}
             />
             <SkeletonLayer
@@ -40,6 +53,9 @@ export function MotionChannelRenderer({
               variant="template"
               shootingHand={report.template.shootingHand}
               differences={sample.differences}
+              centerX={transform.centerX}
+              centerY={transform.centerY}
+              scale={transform.scale}
               showAllLandmarks={showAllLandmarks}
             />
             <SkeletonLayer
@@ -48,6 +64,9 @@ export function MotionChannelRenderer({
               variant="user"
               shootingHand={report.template.shootingHand}
               differences={sample.differences}
+              centerX={transform.centerX}
+              centerY={transform.centerY}
+              scale={transform.scale}
               showAllLandmarks={showAllLandmarks}
             />
           </svg>

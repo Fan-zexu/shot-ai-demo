@@ -46,6 +46,32 @@ test('one animation clock drives interpolated playback without rewriting event a
   await expect(workspace).toHaveAttribute('data-sample-index', '240');
 });
 
+test('overlay and channel keep one action-wide fit across the complete timeline', async ({ page }) => {
+  await openReadyReport(page);
+  await page.getByRole('button', { name: /骨架叠加/ }).click();
+  const overlay = page.locator('.skeleton-overlay-renderer svg');
+  const scale = await overlay.getAttribute('data-fit-scale');
+  const center = await overlay.getAttribute('data-fit-center');
+
+  await page.getByRole('button', { name: /释放姿态代理/ }).click();
+  await expect(overlay).toHaveAttribute('data-fit-scale', scale!);
+  await expect(overlay).toHaveAttribute('data-fit-center', center!);
+
+  await page.getByRole('button', { name: /动作通道/ }).click();
+  const channel = page.locator('.motion-channel-renderer svg');
+  await expect(channel).toHaveAttribute('data-fit-scale', scale!);
+  await expect(channel).toHaveAttribute('data-fit-center', center!);
+  const points = await channel.locator('circle[data-landmark]').evaluateAll((circles) => circles.map((circle) => ({
+    x: Number(circle.getAttribute('cx')),
+    y: Number(circle.getAttribute('cy')),
+    radius: Number(circle.getAttribute('r')),
+  })));
+  expect(Math.min(...points.map((point) => point.x - point.radius))).toBeGreaterThanOrEqual(0);
+  expect(Math.max(...points.map((point) => point.x + point.radius))).toBeLessThanOrEqual(480);
+  expect(Math.min(...points.map((point) => point.y - point.radius))).toBeGreaterThanOrEqual(0);
+  expect(Math.max(...points.map((point) => point.y + point.radius))).toBeLessThanOrEqual(400);
+});
+
 test('320px report keeps two video columns and 44px touch targets', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await openReadyReport(page);

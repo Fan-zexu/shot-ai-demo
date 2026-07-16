@@ -19,6 +19,7 @@ interface SkeletonLayerProps {
   shootingHand: ShootingHand;
   differences: RegionDifferences;
   centerX?: number;
+  centerY?: number;
   scale?: number;
   channelRadiusByRegion?: Record<BodyRegion, number>;
   showAllLandmarks?: boolean;
@@ -59,6 +60,7 @@ export function SkeletonLayer({
   shootingHand,
   differences,
   centerX = 240,
+  centerY = 175,
   scale = 150,
   channelRadiusByRegion,
   showAllLandmarks = false,
@@ -75,8 +77,8 @@ export function SkeletonLayer({
         const from = pointMap.get(connection.from);
         const to = pointMap.get(connection.to);
         if (!from || !to || confidence(from) < 0.35 || confidence(to) < 0.35) return null;
-        const start = coordinates(from, coordinateSpace, centerX, scale);
-        const end = coordinates(to, coordinateSpace, centerX, scale);
+        const start = coordinates(from, coordinateSpace, centerX, centerY, scale);
+        const end = coordinates(to, coordinateSpace, centerX, centerY, scale);
         const difference = differences[connection.region];
         const evidence = difference.highlighted && regionIsAvailable(difference);
         const showEvidence = evidence && variant !== 'channel';
@@ -101,7 +103,7 @@ export function SkeletonLayer({
       })}
       {displayPoints.map((point) => {
         if (confidence(point) < 0.35) return null;
-        const position = coordinates(point, coordinateSpace, centerX, scale);
+        const position = coordinates(point, coordinateSpace, centerX, centerY, scale);
         const region = jointRegion(point.name, shootingHand);
         const difference = region ? differences[region] : null;
         const evidence = Boolean(difference?.highlighted && regionIsAvailable(difference));
@@ -127,10 +129,11 @@ function coordinates(
   point: SkeletonPoint,
   coordinateSpace: CoordinateSpace,
   centerX: number,
+  centerY: number,
   scale: number,
 ) {
   if (coordinateSpace === 'video') return { x: point.x * 1000, y: point.y * 1000 };
-  return { x: centerX + point.x * scale, y: 175 + point.y * scale };
+  return { x: centerX + point.x * scale, y: centerY + point.y * scale };
 }
 
 function confidence(point: SkeletonPoint) {

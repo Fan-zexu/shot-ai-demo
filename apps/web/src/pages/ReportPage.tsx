@@ -6,6 +6,7 @@ import { AppShell } from '../components/AppShell.tsx';
 import { getReport, toApiError } from '../lib/api.ts';
 import type { PublicApiError } from '../lib/types.ts';
 import { DebugPanel } from '../report/DebugPanel.tsx';
+import { fitReportToView } from '../report/fit-to-view.ts';
 import { ModeSwitcher, PlaybackControls } from '../report/PlaybackControls.tsx';
 import { MotionChannelRenderer } from '../report/MotionChannelRenderer.tsx';
 import {
@@ -62,6 +63,7 @@ export function ReportWorkspace({ report }: { report: ReportBundle }) {
   const rawFrame = report.renderFrames[state.sampleIndex]!;
   const presentationSequence = useMemo(() => buildPresentationSequence(report), [report]);
   const diagnostics = useMemo(() => playbackDiagnostics(report), [report]);
+  const viewFit = useMemo(() => fitReportToView(report), [report]);
   const presentationFrame = useMemo(() => {
     if (!state.playing) return rawFrame;
     const startIndex = Math.min(presentationSequence.length - 1, Math.floor(state.displayPosition));
@@ -116,6 +118,7 @@ export function ReportWorkspace({ report }: { report: ReportBundle }) {
             frame={presentationFrame}
             sample={sample}
             showAllLandmarks={showAllLandmarks}
+            viewFit={viewFit}
           />
         ) : null}
         {state.mode === 'motion_channel' ? (
@@ -124,6 +127,7 @@ export function ReportWorkspace({ report }: { report: ReportBundle }) {
             frame={presentationFrame}
             sample={sample}
             showAllLandmarks={showAllLandmarks}
+            viewFit={viewFit}
           />
         ) : null}
 
