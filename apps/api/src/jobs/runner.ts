@@ -238,10 +238,10 @@ export class JobRunner {
         sourceFileId: source.id,
         sourceSha256: source.sha256,
         shootingHand,
-        // Reference material often contains instructional slow motion. Mark it
-        // as timing-untrusted so downstream alignment cannot treat playback
-        // speed as the shooter's real movement speed.
-        normalSpeedConfirmed: sourceType === 'user',
+        // Demo uploads do not require a speed declaration. Mark both sources
+        // as timing-untrusted so slow motion or speed ramps cannot be mistaken
+        // for the shooter's real movement speed.
+        normalSpeedConfirmed: false,
         thresholds: {},
         outputPath,
       });

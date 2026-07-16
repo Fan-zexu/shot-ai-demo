@@ -17,7 +17,7 @@ export const TEMPLATE_STAGES: DisplayStage[] = [
 
 export const COMPARISON_STAGES: DisplayStage[] = [
   { id: 'upload_received', label: '上传完成', detail: '用户视频已安全保存' },
-  { id: 'validating_user', label: '用户视频质量检查', detail: '检查输入与拍摄条件' },
+  { id: 'validating_user', label: '记录质量提示', detail: '记录输入与拍摄条件' },
   { id: 'extracting_user_pose', label: '提取用户姿态', detail: '逐帧识别全身关键点' },
   { id: 'detecting_user_events', label: '识别用户动作事件', detail: '定位六个投篮动作事件' },
   { id: 'checking_compatibility', label: '检查模板兼容性', detail: '验证投篮手、视角与共同区域' },

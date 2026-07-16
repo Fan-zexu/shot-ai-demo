@@ -88,15 +88,12 @@ def analyze_motion(
     if detected_view != "shooting_side":
         view_check = QualityCheck(
             code="SIDE_VIEW",
-            status="warning" if request.source_type == "template" else "fail",
+            status="warning",
             measured_value=detected_view,
             threshold="shooting_side",
             message="拍摄角度不是投篮手侧面",
         )
-        if request.source_type == "template":
-            report.checks.append(view_check)
-        else:
-            report = _reject(report, "USER_NOT_SIDE_VIEW", view_check)
+        report.checks.append(view_check)
     else:
         report.checks.append(
             QualityCheck(
@@ -115,15 +112,12 @@ def analyze_motion(
     ):
         camera_check = QualityCheck(
             code="CAMERA_STABILITY",
-            status="warning" if request.source_type == "template" else "fail",
+            status="warning",
             measured_value=float(camera["maxJumpRatio"]),
             threshold=0.05,
             message="相机存在明显移动、跳变或变焦",
         )
-        if request.source_type == "template":
-            report.checks.append(camera_check)
-        else:
-            report = _reject(report, "UNSTABLE_CAMERA", camera_check)
+        report.checks.append(camera_check)
 
     if report.status == "rejected":
         return AnalyzeMotionRejected(

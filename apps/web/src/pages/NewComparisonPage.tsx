@@ -20,7 +20,6 @@ export function NewComparisonPage({ initialTemplateId }: { initialTemplateId?: s
   const [selectedId, setSelectedId] = useState(initialTemplateId ?? '');
   const [hand, setHand] = useState<ShootingHand | ''>('');
   const [file, setFile] = useState<File | null>(null);
-  const [confirmed, setConfirmed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -56,7 +55,6 @@ export function NewComparisonPage({ initialTemplateId }: { initialTemplateId?: s
     if (handMismatch) return setFormError('投篮手不一致，请选择同手模板或修改投篮手');
     if (!file) return setFormError('请选择一个本地视频');
     if (file.size > MAX_UPLOAD_BYTES) return setFormError('文件超过 300 MB，请压缩后重试');
-    if (!confirmed) return setFormError('请确认视频是正常速度且未变速');
 
     setSubmitting(true);
     try {
@@ -74,12 +72,12 @@ export function NewComparisonPage({ initialTemplateId }: { initialTemplateId?: s
         <div>
           <span className="eyebrow">NEW COMPARISON / 单次纵切</span>
           <h1>上传你的投篮</h1>
-          <p>一个模板、一个视频、同一投篮手。质量结论由服务端真实分析。</p>
+          <p>一个模板、一个视频、同一投篮手。Demo 阶段先记录质量提示，再继续真实分析。</p>
         </div>
       </section>
 
       <section className="capture-rules" aria-label="拍摄要求">
-        {['投篮手侧面', '固定手机', '全身入镜', '一次完整投篮', '正常速度'].map((rule, index) => (
+        {['投篮手侧面', '固定手机', '全身入镜', '一次完整投篮', '可含慢放'].map((rule, index) => (
           <span key={rule}><i>{String(index + 1).padStart(2, '0')}</i>{rule}</span>
         ))}
       </section>
@@ -135,17 +133,17 @@ export function NewComparisonPage({ initialTemplateId }: { initialTemplateId?: s
               </p>
             ) : null}
             <FilePicker file={file} onChange={setFile} />
-            <label className="check-row">
-              <input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} />
-              <span><strong>我确认该视频为正常速度</strong><small>没有加速、慢放或剪辑变速</small></span>
-            </label>
+            <div className="speed-note" role="note">
+              <strong>Demo 阶段不拦截慢放或剪辑变速</strong>
+              <span>系统仍记录时间轴与重复帧证据，但只比较姿态和动作阶段，不比较真实速度、节奏或阶段耗时。</span>
+            </div>
           </div>
         </section>
 
         {formError ? <p className="form-request-error" role="alert">{formError}</p> : null}
         {requestError ? <p className="form-request-error" role="alert">{requestError.message} · {requestError.code}</p> : null}
         <div className="submit-dock">
-          <span><b>不会生成虚假报告</b><small>输入不可信时，系统会说明原因并要求重拍。</small></span>
+          <span><b>先走完整分析流程</b><small>质量偏差记录为提示；无法形成动作数据时才停止。</small></span>
           <button className="button button-primary" type="submit" disabled={submitting || templates.length === 0}>
             {submitting ? '正在上传…' : '开始动作对比'}
           </button>

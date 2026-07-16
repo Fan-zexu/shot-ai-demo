@@ -47,16 +47,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 function videoForm(input: {
   file: File;
   shootingHand: ShootingHand;
-  normalSpeedConfirmed?: true;
   name?: string;
   templateId?: string;
 }) {
   const form = new FormData();
   form.set('file', input.file);
   form.set('shootingHand', input.shootingHand);
-  if (input.normalSpeedConfirmed) {
-    form.set('normalSpeedConfirmed', 'true');
-  }
   if (input.name) form.set('name', input.name);
   if (input.templateId) form.set('templateId', input.templateId);
   return form;
@@ -100,7 +96,7 @@ export function createComparison(input: {
 }) {
   return request<CreateComparisonResponse>('/comparisons', {
     method: 'POST',
-    body: videoForm({ ...input, normalSpeedConfirmed: true }),
+    body: videoForm(input),
   });
 }
 

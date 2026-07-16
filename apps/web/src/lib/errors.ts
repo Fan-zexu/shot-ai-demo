@@ -27,8 +27,8 @@ const ERROR_COPY: Record<string, ErrorCopy> = {
     action: '保留准备动作到随挥结束后重拍',
   },
   ABNORMAL_VIDEO_TIMING: {
-    title: '视频存在明显时间轴或播放速度异常',
-    action: '上传正常速度、未剪辑变速的原始视频',
+    title: '视频时间轴无法连续解析',
+    action: '更换为时间戳连续、没有倒放或动作中间硬切的视频',
   },
   INSUFFICIENT_COMPARABLE_REGIONS: {
     title: '用户与模板缺少足够的共同可比较区域',

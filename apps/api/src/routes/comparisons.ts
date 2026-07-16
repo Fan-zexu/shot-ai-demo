@@ -5,7 +5,6 @@ import {
   parseVideoUpload,
   registerSourceUpload,
   requireField,
-  requireNormalSpeed,
   requireShootingHand,
 } from '../http/upload.ts';
 import { buildReportBundle } from '../report/build-report.ts';
@@ -15,7 +14,6 @@ export async function registerComparisonRoutes(app: FastifyInstance) {
     const upload = await parseVideoUpload(request);
     const templateId = requireField(upload.fields, 'templateId');
     const shootingHand = requireShootingHand(upload.fields);
-    requireNormalSpeed(upload.fields);
     const template = app.services.templates.getActive(templateId);
     if (!template || template.status !== 'ready' || !template.currentArtifactId) {
       throw appError('TEMPLATE_NOT_READY', 'Only a ready template can start a comparison');

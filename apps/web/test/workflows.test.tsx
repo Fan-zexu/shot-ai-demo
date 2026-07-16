@@ -93,11 +93,39 @@ describe('new comparison', () => {
       screen.getByLabelText('本地视频'),
       new File(['video'], 'shot.mp4', { type: 'video/mp4' }),
     );
-    await user.click(screen.getByRole('checkbox'));
     await user.click(screen.getByRole('button', { name: '开始动作对比' }));
 
     expect(screen.getByText('投篮手不一致，请选择同手模板或修改投篮手')).toBeInTheDocument();
     expect(api.createComparison).not.toHaveBeenCalled();
+  });
+
+  test('starts analysis without requiring a normal-speed confirmation', async () => {
+    const user = userEvent.setup();
+    api.listTemplates.mockResolvedValue([
+      templateFixture({ id: 'tpl_right', name: '右手侧面参考', status: 'ready' }),
+    ]);
+    api.createComparison.mockResolvedValue({
+      comparisonId: 'cmp_soft_gate',
+      jobId: 'job_soft_gate',
+      status: 'queued',
+    });
+    render(<NewComparisonPage initialTemplateId="tpl_right" />);
+
+    await screen.findByText('右手侧面参考');
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(screen.getByText('Demo 阶段不拦截慢放或剪辑变速')).toBeInTheDocument();
+    await user.click(screen.getByRole('radio', { name: '右手' }));
+    await user.upload(
+      screen.getByLabelText('本地视频'),
+      new File(['video'], 'slow-shot.mp4', { type: 'video/mp4' }),
+    );
+    await user.click(screen.getByRole('button', { name: '开始动作对比' }));
+
+    expect(api.createComparison).toHaveBeenCalledWith({
+      file: expect.any(File),
+      templateId: 'tpl_right',
+      shootingHand: 'right',
+    });
   });
 });
 

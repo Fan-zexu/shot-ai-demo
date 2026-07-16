@@ -609,7 +609,8 @@ input::placeholder {
   font-size: 0.82rem;
 }
 
-.template-speed-note {
+.template-speed-note,
+.speed-note {
   display: grid;
   padding: 12px 14px;
   gap: 4px;
@@ -617,12 +618,14 @@ input::placeholder {
   background: rgba(105, 180, 255, 0.05);
 }
 
-.template-speed-note strong {
+.template-speed-note strong,
+.speed-note strong {
   color: var(--chalk);
   font-size: 0.82rem;
 }
 
-.template-speed-note span {
+.template-speed-note span,
+.speed-note span {
   color: var(--muted);
   font-size: 0.72rem;
   line-height: 1.5;
@@ -1037,7 +1040,8 @@ input::placeholder {
 
 .section-content > .hand-field,
 .section-content > .field,
-.section-content > .check-row {
+.section-content > .check-row,
+.section-content > .speed-note {
   margin-top: 18px;
 }
 

@@ -78,13 +78,6 @@ export function requireShootingHand(fields: Record<string, string>) {
   return value;
 }
 
-export function requireNormalSpeed(fields: Record<string, string>): true {
-  if (requireField(fields, 'normalSpeedConfirmed') !== 'true') {
-    throw appError('INVALID_FORM', 'normalSpeedConfirmed must be true');
-  }
-  return true;
-}
-
 export function registerSourceUpload(request: FastifyRequest, upload: ParsedVideoUpload) {
   const existing = request.server.services.files
     .findActiveBySha256(upload.stored.sha256)

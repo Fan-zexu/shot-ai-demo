@@ -79,11 +79,13 @@ def test_pipeline_does_not_reject_repeated_frames_for_an_altered_speed_template(
     assert speed_check["status"] == "warning"
 
 
-def test_template_view_and_camera_checks_are_advisory_in_mvp_mode(
+@pytest.mark.parametrize("source_type", ["template", "user"])
+def test_view_and_camera_checks_are_advisory_in_mvp_mode(
+    source_type: str,
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ):
-    video = create_video(tmp_path / "data" / "uploads" / "template.mp4", frames=90, size="720x720")
-    output = tmp_path / "data" / "artifacts" / "template-motion.json.gz"
+    video = create_video(tmp_path / "data" / "uploads" / f"{source_type}.mp4", frames=90, size="720x720")
+    output = tmp_path / "data" / "artifacts" / f"{source_type}-motion.json.gz"
     monkeypatch.setattr("app.pipeline.classify_view", lambda _frames, _hand: "oblique")
     monkeypatch.setattr(
         "app.pipeline.estimate_global_motion",
@@ -96,13 +98,13 @@ def test_template_view_and_camera_checks_are_advisory_in_mvp_mode(
 
     response = analyze_motion(
         AnalyzeMotionRequest(
-            request_id="job_template_advisory",
-            source_type="template",
+            request_id=f"job_{source_type}_advisory",
+            source_type=source_type,
             file_path=str(video),
-            source_file_id="file_template_advisory",
+            source_file_id=f"file_{source_type}_advisory",
             source_sha256="c" * 64,
             shooting_hand="right",
-            normal_speed_confirmed=False,
+            normal_speed_confirmed=source_type == "user",
             output_path=str(output),
         ),
         FakePoseBackend(),

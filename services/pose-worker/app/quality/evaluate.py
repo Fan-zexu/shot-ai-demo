@@ -257,10 +257,11 @@ def evaluate_quality(
         rejection_codes.append("INSUFFICIENT_COMPARABLE_REGIONS")
 
     rejection_codes = list(dict.fromkeys(rejection_codes))
-    if source_type == "template" and rejection_codes:
-        # The local MVP uses externally sourced teaching and athlete clips.
-        # Keep their quality evidence, but let event extraction decide whether
-        # enough motion data exists to build a usable reference artifact.
+    if rejection_codes:
+        # During local MVP testing, capture-quality thresholds are advisory for
+        # both templates and user videos. Keep every measured failure, but let
+        # pose/event extraction and comparison compatibility decide whether a
+        # truthful artifact can continue through the pipeline.
         checks = [
             check.model_copy(update={"status": "warning"})
             if check.status == "fail"

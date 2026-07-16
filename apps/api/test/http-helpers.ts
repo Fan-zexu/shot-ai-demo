@@ -42,7 +42,6 @@ export async function createReadyTemplate(app: FastifyInstance) {
     multipartRequest('/api/v1/templates', {
       name: '右手侧面模板',
       shootingHand: 'right',
-      normalSpeedConfirmed: 'true',
     }),
   );
   const created = response.json() as { templateId: string; jobId: string };
@@ -59,7 +58,6 @@ export async function createComparison(
     multipartRequest('/api/v1/comparisons', {
       templateId,
       shootingHand,
-      normalSpeedConfirmed: 'true',
     }),
   );
 }

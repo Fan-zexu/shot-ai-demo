@@ -128,7 +128,7 @@ function statusMessage(job: JobSummary) {
   if (job.status === 'queued') return '任务已经保存，会按本地队列顺序执行。';
   if (job.status === 'running') return '可以离开页面；任务状态保存在本地数据库中。';
   if (job.status === 'ready') return '全部产物已写入并通过契约校验。';
-  if (job.status === 'rejected') return '需要按提示更换输入，不能绕过质量检查。';
+  if (job.status === 'rejected') return '视频无法形成完整动作数据，需要按提示更换输入。';
   return '原始文件仍然保留，可以从失败阶段重新执行。';
 }
 

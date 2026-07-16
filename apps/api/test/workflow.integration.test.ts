@@ -130,7 +130,7 @@ test('a comparison produces one report bundle, aligned previews, and Range video
   assert.equal(report.json().comparison.provenance.thresholdSnapshot.velocityWeight, 0);
   assert.equal(
     worker.analyzeRequests.find((request) => request.sourceType === 'user')?.normalSpeedConfirmed,
-    true,
+    false,
   );
   assert.equal(debugSummary.json().resultEvidence.compatibility.shootingHand, 'right');
   assert.equal(typeof debugSummary.json().templateArtifactEvidence.events.prep_start.confidence, 'number');
@@ -257,7 +257,6 @@ test('unknown file signatures are rejected before a task is created', async (con
       {
         name: 'bad',
         shootingHand: 'right',
-        normalSpeedConfirmed: 'true',
       },
       Buffer.from('not-a-video'),
     ),
